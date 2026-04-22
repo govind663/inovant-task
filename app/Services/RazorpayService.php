@@ -23,7 +23,7 @@ class RazorpayService
     {
         return $this->api->order->create([
             'receipt' => 'order_' . time(),
-            'amount' => $amount * 100, // paisa में
+            'amount' => $amount * 100,
             'currency' => 'INR'
         ]);
     }
