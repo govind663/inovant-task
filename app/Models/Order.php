@@ -31,6 +31,11 @@ class Order extends Model
     ];
 
     /**
+     * Append attributes
+     */
+    protected $appends = ['items_count'];
+
+    /**
      * Relationships
      */
 
@@ -40,16 +45,35 @@ class Order extends Model
         return $this->belongsTo(User::class);
     }
 
-    // One order has many items (IMPORTANT)
+    // One order has many items
     public function items()
     {
-        return $this->hasMany(OrderItem::class)->with('product');
+        return $this->hasMany(OrderItem::class);
     }
 
     // One order has one payment
     public function payment()
     {
         return $this->hasOne(Payment::class);
+    }
+
+    /**
+     * Scopes (clean querying)
+     */
+
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopePaid($query)
+    {
+        return $query->where('status', 'paid');
+    }
+
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
     }
 
     /**
@@ -74,7 +98,7 @@ class Order extends Model
         ]);
     }
 
-    // Mark order as failed (IMPORTANT)
+    // Mark order as failed
     public function markAsFailed()
     {
         $this->update([
@@ -86,9 +110,9 @@ class Order extends Model
      * Accessors
      */
 
-    // Total items count (optional)
+    // Total items count
     public function getItemsCountAttribute()
     {
-        return $this->items->count();
+        return $this->items()->count();
     }
 }

@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\ProductController;
 use App\Http\Controllers\API\Auth\AuthController;
 use App\Http\Controllers\API\CartController;
+use App\Http\Controllers\API\CheckoutController;
+use App\Http\Controllers\API\PaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,9 +47,27 @@ Route::middleware('auth:sanctum')->group(function () {
     |-------------------------
     */
     Route::prefix('cart')->group(function () {
-        Route::get('/', [CartController::class, 'index']);          
-        Route::post('/add', [CartController::class, 'add']);        
-        Route::post('/update', [CartController::class, 'update']);  
-        Route::post('/remove', [CartController::class, 'remove']);  
+        Route::get('/', [CartController::class, 'index']);
+        Route::post('/add', [CartController::class, 'add']);
+        Route::post('/update', [CartController::class, 'update']);
+        Route::post('/remove', [CartController::class, 'remove']);
+    });
+
+    /*
+    |-------------------------
+    | Checkout Route
+    |-------------------------
+    */
+    Route::post('/checkout', [CheckoutController::class, 'checkout']);
+
+    /*
+    |-------------------------
+    | Payment Routes
+    |-------------------------
+    */
+    Route::prefix('payment')->group(function () {
+        // Route::post('/pay', [PaymentController::class, 'pay']);       // initiate payment
+        // Route::post('/success', [PaymentController::class, 'success']); // success callback
+        // Route::post('/failed', [PaymentController::class, 'failed']);   // failed callback
     });
 });

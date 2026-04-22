@@ -29,6 +29,11 @@ class OrderItem extends Model
     ];
 
     /**
+     * Append attributes
+     */
+    protected $appends = ['total_price'];
+
+    /**
      * Relationships
      */
 
