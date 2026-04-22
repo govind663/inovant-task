@@ -9,6 +9,7 @@ use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use App\Services\ProductService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Exception;
 
 class ProductController extends Controller
@@ -26,15 +27,25 @@ class ProductController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $products = $this->service->list()->load('images');
+            $products = $this->service->list(); // already paginated
 
             return response()->json([
                 'status' => true,
                 'message' => 'Product list fetched successfully',
-                'data' => ProductResource::collection($products)
-            ], 200);
+                'data' => ProductResource::collection($products),
+                'meta' => [
+                    'current_page' => $products->currentPage(),
+                    'last_page' => $products->lastPage(),
+                    'per_page' => $products->perPage(),
+                    'total' => $products->total(),
+                ]
+            ]);
 
         } catch (Exception $e) {
+            Log::error('Product List Failed', [
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to fetch products',
@@ -58,10 +69,15 @@ class ProductController extends Controller
             ], 201);
 
         } catch (Exception $e) {
+            Log::error('Product Store Failed', [
+                'data' => $request->all(),
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Product creation failed',
-                'error' => $e->getMessage()
+                'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }
@@ -78,13 +94,18 @@ class ProductController extends Controller
                 'status' => true,
                 'message' => 'Product fetched successfully',
                 'data' => new ProductResource($product)
-            ], 200);
+            ]);
 
         } catch (Exception $e) {
+            Log::error('Product Fetch Failed', [
+                'product_id' => $product->id,
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to fetch product',
-                'error' => $e->getMessage()
+                'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }
@@ -101,13 +122,19 @@ class ProductController extends Controller
                 'status' => true,
                 'message' => 'Product updated successfully',
                 'data' => new ProductResource($product)
-            ], 200);
+            ]);
 
         } catch (Exception $e) {
+            Log::error('Product Update Failed', [
+                'product_id' => $product->id,
+                'data' => $request->all(),
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Product update failed',
-                'error' => $e->getMessage()
+                'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }
@@ -123,13 +150,18 @@ class ProductController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Product deleted successfully'
-            ], 200);
+            ]);
 
         } catch (Exception $e) {
+            Log::error('Product Delete Failed', [
+                'product_id' => $product->id,
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Product deletion failed',
-                'error' => $e->getMessage()
+                'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }

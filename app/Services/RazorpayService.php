@@ -4,10 +4,12 @@ namespace App\Services;
 
 use Razorpay\Api\Api;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Arr;
+use RuntimeException;
 
 class RazorpayService
 {
-    protected $api;
+    protected Api $api;
 
     public function __construct()
     {
@@ -15,7 +17,7 @@ class RazorpayService
         $secret = config('services.razorpay.secret');
 
         if (empty($key) || empty($secret)) {
-            throw new \Exception('Razorpay credentials not configured properly.');
+            throw new RuntimeException('Razorpay credentials not configured properly.');
         }
 
         $this->api = new Api($key, $secret);
@@ -24,13 +26,30 @@ class RazorpayService
     /**
      * Create Razorpay Order
      */
-    public function createOrder($amount)
+    public function createOrder(float $amount): array
     {
-        return $this->api->order->create([
-            'receipt' => 'order_' . now()->timestamp, // better than time()
-            'amount' => (int) ($amount * 100), // ensure integer (paise)
-            'currency' => config('services.razorpay.currency', 'INR'),
-        ]);
+        try {
+            $order = $this->api->order->create([
+                'receipt' => 'order_' . now()->timestamp,
+                'amount' => (int) round($amount * 100), // safer conversion
+                'currency' => config('services.razorpay.currency', 'INR'),
+            ]);
+
+            return [
+                'id' => $order['id'],
+                'amount' => $order['amount'],
+                'currency' => $order['currency'],
+            ];
+
+        } catch (\Throwable $e) {
+
+            Log::error('Razorpay Order Creation Failed', [
+                'amount' => $amount,
+                'error' => $e->getMessage()
+            ]);
+
+            throw new RuntimeException('Unable to create payment order.');
+        }
     }
 
     /**
@@ -42,10 +61,11 @@ class RazorpayService
             $this->api->utility->verifyPaymentSignature($attributes);
             return true;
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+
             Log::error('Razorpay Signature Verification Failed', [
+                'order_id' => Arr::get($attributes, 'razorpay_order_id'),
                 'error' => $e->getMessage(),
-                'payload' => $attributes
             ]);
 
             return false;

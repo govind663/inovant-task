@@ -4,23 +4,27 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderResource;
-use App\Models\Order;
+use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Exception;
 
 class OrderController extends Controller
 {
+    protected $service;
+
+    public function __construct(OrderService $service)
+    {
+        $this->service = $service;
+    }
+
     /**
      * Get logged-in user order list
      */
     public function index(): JsonResponse
     {
         try {
-            $orders = Order::with(['items.product', 'payment'])
-                ->where('user_id', Auth::id())
-                ->latest()
-                ->paginate(10);
+            $orders = $this->service->list();
 
             return response()->json([
                 'status' => true,
@@ -35,6 +39,11 @@ class OrderController extends Controller
             ]);
 
         } catch (Exception $e) {
+
+            Log::error('Order List Failed', [
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to fetch orders',
@@ -44,15 +53,12 @@ class OrderController extends Controller
     }
 
     /**
-     * Get single order (SECURE)
+     * Get single order
      */
     public function show($id): JsonResponse
     {
         try {
-            $order = Order::with(['items.product', 'payment'])
-                ->where('id', $id)
-                ->where('user_id', Auth::id())
-                ->first();
+            $order = $this->service->find($id);
 
             if (!$order) {
                 return response()->json([
@@ -68,6 +74,12 @@ class OrderController extends Controller
             ]);
 
         } catch (Exception $e) {
+
+            Log::error('Order Fetch Failed', [
+                'order_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to fetch order',
@@ -82,47 +94,20 @@ class OrderController extends Controller
     public function cancel($id): JsonResponse
     {
         try {
-            $order = Order::where('id', $id)
-                ->where('user_id', Auth::id())
-                ->first();
-
-            if (!$order) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Order not found'
-                ], 404);
-            }
-
-            /**
-             *  Only pending orders can be cancelled
-             */
-            if ($order->status !== 'pending') {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Only pending orders can be cancelled'
-                ], 400);
-            }
-
-            /**
-             *  Prevent cancel if already paid
-             */
-            if ($order->is_paid) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Paid order cannot be cancelled'
-                ], 400);
-            }
-
-            $order->update([
-                'status' => 'cancelled'
-            ]);
+            $response = $this->service->cancel($id);
 
             return response()->json([
-                'status' => true,
-                'message' => 'Order cancelled successfully'
-            ]);
+                'status' => $response['status'],
+                'message' => $response['message']
+            ], $response['code']);
 
         } catch (Exception $e) {
+
+            Log::error('Order Cancel Failed', [
+                'order_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Order cancellation failed',

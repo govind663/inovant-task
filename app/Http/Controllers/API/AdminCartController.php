@@ -7,6 +7,7 @@ use App\Http\Resources\CartResource;
 use App\Models\Cart;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Exception;
 
 class AdminCartController extends Controller
@@ -34,6 +35,10 @@ class AdminCartController extends Controller
             ]);
 
         } catch (Exception $e) {
+            Log::error('AdminCart Index Failed', [
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to fetch carts',
@@ -64,6 +69,11 @@ class AdminCartController extends Controller
             ]);
 
         } catch (Exception $e) {
+            Log::error('AdminCart Show Failed', [
+                'cart_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to fetch cart',
@@ -90,6 +100,11 @@ class AdminCartController extends Controller
             ]);
 
         } catch (Exception $e) {
+            Log::error('AdminCart UserCart Failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to fetch user cart',

@@ -8,12 +8,14 @@ use App\Repositories\ProductRepository;
 use App\Traits\UploadFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Exception;
 
 class ProductService
 {
     use UploadFile;
 
-    protected $repo;
+    protected ProductRepository $repo;
 
     public function __construct(ProductRepository $repo)
     {
@@ -23,95 +25,129 @@ class ProductService
     /**
      * Store Product
      */
-    public function store($request)
+    public function store($request): Product
     {
-        return DB::transaction(function () use ($request) {
+        try {
+            return DB::transaction(function () use ($request) {
 
-            $product = $this->repo->create([
-                'name' => $request->name,
-                'price' => $request->price,
-                'user_id' => Auth::id() ?? 1, // fallback safe
+                $product = $this->repo->create([
+                    'name' => $request->name,
+                    'price' => $request->price,
+                    'user_id' => Auth::id() ?? 1, // fallback (only for testing)
+                ]);
+
+                if ($request->hasFile('images')) {
+                    $paths = $this->uploadMultiple(
+                        $request->file('images'),
+                        'products'
+                    );
+
+                    $this->saveImages($product->id, $paths);
+                }
+
+                return $product->load('images');
+            });
+
+        } catch (Exception $e) {
+            Log::error('Product Store Failed', [
+                'user_id' => Auth::id(),
+                'data' => $request->all(),
+                'error' => $e->getMessage()
             ]);
 
-            if ($request->hasFile('images')) {
-                $paths = $this->uploadMultiple(
-                    $request->file('images'),
-                    'products'
-                );
-
-                $this->saveImages($product->id, $paths);
-            }
-
-            return $product->load('images');
-        });
+            throw $e; // controller handle karega
+        }
     }
 
     /**
      * Update Product
      */
-    public function update($request, Product $product)
+    public function update($request, Product $product): Product
     {
-        return DB::transaction(function () use ($request, $product) {
+        try {
+            return DB::transaction(function () use ($request, $product) {
 
-            // Update basic fields
-            $this->repo->update($product, $request->only('name', 'price'));
+                // Update basic fields
+                $this->repo->update($product, $request->only('name', 'price'));
 
-            /**
-             * Add New Images
-             */
-            if ($request->hasFile('images')) {
-                $paths = $this->uploadMultiple(
-                    $request->file('images'),
-                    'products'
-                );
-
-                $this->saveImages($product->id, $paths);
-            }
-
-            /**
-             * Delete Selected Images
-             */
-            if ($request->filled('delete_images')) {
-
-                $images = $product->images()
-                    ->whereIn('id', $request->delete_images)
-                    ->get();
-
-                if ($images->isNotEmpty()) {
-
-                    $this->deleteFiles(
-                        $images->pluck('image_path')->toArray()
+                /**
+                 * Add New Images
+                 */
+                if ($request->hasFile('images')) {
+                    $paths = $this->uploadMultiple(
+                        $request->file('images'),
+                        'products'
                     );
 
-                    $product->images()
-                        ->whereIn('id', $request->delete_images)
-                        ->delete();
+                    $this->saveImages($product->id, $paths);
                 }
-            }
 
-            return $product->load('images');
-        });
+                /**
+                 * Delete Selected Images
+                 */
+                if ($request->filled('delete_images')) {
+
+                    $images = $product->images()
+                        ->whereIn('id', $request->delete_images)
+                        ->get();
+
+                    if ($images->isNotEmpty()) {
+
+                        $this->deleteFiles(
+                            $images->pluck('image_path')->toArray()
+                        );
+
+                        $product->images()
+                            ->whereIn('id', $request->delete_images)
+                            ->delete();
+                    }
+                }
+
+                return $product->load('images');
+            });
+
+        } catch (Exception $e) {
+            Log::error('Product Update Failed', [
+                'product_id' => $product->id,
+                'user_id' => Auth::id(),
+                'data' => $request->all(),
+                'error' => $e->getMessage()
+            ]);
+
+            throw $e;
+        }
     }
 
     /**
      * Delete Product
      */
-    public function delete(Product $product)
+    public function delete(Product $product): bool
     {
-        return DB::transaction(function () use ($product) {
+        try {
+            return DB::transaction(function () use ($product) {
 
-            $this->deleteFiles(
-                $product->images()->pluck('image_path')->toArray()
-            );
+                $this->deleteFiles(
+                    $product->images()->pluck('image_path')->toArray()
+                );
 
-            $product->images()->delete();
+                $product->images()->delete();
 
-            return $this->repo->delete($product);
-        });
+                return $this->repo->delete($product);
+            });
+
+        } catch (Exception $e) {
+            Log::error('Product Delete Failed', [
+                'product_id' => $product->id,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage()
+            ]);
+
+            throw $e;
+        }
     }
 
     /**
-     * Get Product List (with pagination)
+     * Get Product List
      */
     public function list(int $perPage = 10)
     {

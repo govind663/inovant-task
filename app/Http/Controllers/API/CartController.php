@@ -3,27 +3,31 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Cart\AddToCartRequest;
+use App\Http\Requests\Cart\UpdateCartRequest;
+use App\Http\Requests\Cart\RemoveCartRequest;
 use App\Http\Resources\CartResource;
-use App\Models\Cart;
-use App\Models\CartItem;
-use App\Models\Product;
-use Illuminate\Http\Request;
+use App\Services\CartService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Exception;
 
 class CartController extends Controller
 {
+    protected CartService $service;
+
+    public function __construct(CartService $service)
+    {
+        $this->service = $service;
+    }
+
     /**
      * Get user cart
      */
     public function index(): JsonResponse
     {
         try {
-            $cart = Cart::with('items.product')
-                ->where('user_id', Auth::id())
-                ->where('status', 'active')
-                ->first();
+            $cart = $this->service->getUserCart();
 
             return response()->json([
                 'status' => true,
@@ -31,6 +35,10 @@ class CartController extends Controller
             ]);
 
         } catch (Exception $e) {
+            Log::error('Cart Fetch Failed', [
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to fetch cart',
@@ -42,49 +50,22 @@ class CartController extends Controller
     /**
      * Add to cart
      */
-    public function add(Request $request): JsonResponse
+    public function add(AddToCartRequest $request): JsonResponse
     {
         try {
-            $request->validate([
-                'product_id' => 'required|exists:products,id',
-                'quantity' => 'nullable|integer|min:1'
-            ]);
-
-            $quantity = $request->quantity ?? 1;
-
-            $product = Product::findOrFail($request->product_id);
-
-            // Get or create cart
-            $cart = Cart::firstOrCreate([
-                'user_id' => Auth::id(),
-                'status' => 'active'
-            ]);
-
-            // Check if item already exists
-            $item = CartItem::where('cart_id', $cart->id)
-                ->where('product_id', $product->id)
-                ->first();
-
-            if ($item) {
-                $item->increment('quantity', $quantity);
-            } else {
-                CartItem::create([
-                    'cart_id' => $cart->id,
-                    'product_id' => $product->id,
-                    'quantity' => $quantity,
-                    'price' => $product->price,
-                ]);
-            }
-
-            $cart->recalculate();
+            $cart = $this->service->add($request);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Product added to cart',
-                'data' => new CartResource($cart->load('items.product'))
+                'data' => new CartResource($cart)
             ]);
 
         } catch (Exception $e) {
+            Log::error('Add to Cart Failed', [
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to add product to cart',
@@ -94,36 +75,24 @@ class CartController extends Controller
     }
 
     /**
-     * Update quantity
+     * Update cart
      */
-    public function update(Request $request): JsonResponse
+    public function update(UpdateCartRequest $request): JsonResponse
     {
         try {
-            $request->validate([
-                'item_id' => 'required|exists:cart_items,id',
-                'quantity' => 'required|integer|min:1'
-            ]);
-
-            $item = CartItem::where('id', $request->item_id)
-                ->whereHas('cart', function ($q) {
-                    $q->where('user_id', Auth::id());
-                })
-                ->firstOrFail();
-
-            $item->update([
-                'quantity' => $request->quantity
-            ]);
-
-            $cart = $item->cart;
-            $cart->recalculate();
+            $cart = $this->service->update($request);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Cart updated',
-                'data' => new CartResource($cart->load('items.product'))
+                'data' => new CartResource($cart)
             ]);
 
         } catch (Exception $e) {
+            Log::error('Cart Update Failed', [
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Cart update failed',
@@ -135,32 +104,22 @@ class CartController extends Controller
     /**
      * Remove item
      */
-    public function remove(Request $request): JsonResponse
+    public function remove(RemoveCartRequest $request): JsonResponse
     {
         try {
-            $request->validate([
-                'item_id' => 'required|exists:cart_items,id'
-            ]);
-
-            $item = CartItem::where('id', $request->item_id)
-                ->whereHas('cart', function ($q) {
-                    $q->where('user_id', Auth::id());
-                })
-                ->firstOrFail();
-
-            $cart = $item->cart;
-
-            $item->delete();
-
-            $cart->recalculate();
+            $cart = $this->service->remove($request);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Item removed',
-                'data' => new CartResource($cart->load('items.product'))
+                'data' => new CartResource($cart)
             ]);
 
         } catch (Exception $e) {
+            Log::error('Cart Remove Failed', [
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to remove item',
