@@ -20,14 +20,13 @@ A scalable backend system built using Laravel with clean architecture.
 
 # 📌 Project Overview
 
-This project is a **backend E-commerce API system** that allows:
+This project is a **production-ready backend E-commerce API system** that supports:
 
 * Product management with multiple images
-* Cart management with real-time calculations
-* Checkout & Order processing
-* Payment integration using Razorpay
-
-The system is designed using **clean architecture principles** to ensure scalability and maintainability.
+* Smart cart system with auto calculations
+* Checkout & order lifecycle
+* Secure payment integration using Razorpay
+* Robust error handling & logging
 
 ---
 
@@ -38,6 +37,8 @@ The system is designed using **clean architecture principles** to ensure scalabi
 * MySQL
 * Laravel Sanctum (Authentication)
 * Razorpay (Payment Gateway)
+* Laravel Storage (File handling)
+* Logging system (Laravel Log)
 
 ---
 
@@ -47,14 +48,15 @@ This project follows a **clean layered architecture**:
 
 * **Controller Layer** → Handles request/response
 * **Service Layer** → Business logic
-* **Repository Layer** → Database operations
+* **Repository Layer** → DB abstraction
+* **Request Layer** → Validation & Authorization
 * **Resource Layer** → API response formatting
 
-👉 This ensures:
+👉 Benefits:
 
-* Clean code
-* Scalability
-* Easy maintenance
+* Scalable codebase
+* Clean separation of concerns
+* Easy testing & maintenance
 
 ---
 
@@ -64,41 +66,61 @@ This project follows a **clean layered architecture**:
 
 * Register / Login / Logout
 * Token-based authentication (Sanctum)
+* Single device login (old tokens revoked)
+* Secure API access
+
+---
 
 ## 🛍️ Product Module
 
-* CRUD operations
+* Full CRUD operations
 * Multiple image upload
-* Add/Delete images during update
+* Add/remove images dynamically
+* File upload abstraction via Trait
+* Stored using Laravel Storage
+
+---
 
 ## 🛒 Cart Module
 
 * Add to cart
 * Update quantity
 * Remove item
-* Auto calculation (total items & amount)
+* Auto recalculation (total items & amount)
+* Secure user-based cart isolation
+* Request validation separated
+* Error logging implemented
+
+---
 
 ## 📦 Order Module
 
 * Checkout (Cart → Order)
-* Order history
-* Cancel order
+* Order history (pagination enabled)
+* Secure order access (user-based)
+* Cancel order (only pending & unpaid)
+* Prevent duplicate or invalid operations
+
+---
 
 ## 💳 Payment Module
 
 * Razorpay order creation
-* Payment verification
-* Success & failure handling
+* Payment signature verification
+* Payment success & failure handling
+* Duplicate payment prevention
+* Secure ownership validation
 
 ---
 
 # 🔄 Payment Flow
 
-1. User creates order via checkout
-2. `/payment/pay` → Razorpay order created
+1. User performs checkout → Order created
+2. `/payment/pay` → Razorpay order generated
 3. Frontend completes payment
 4. `/payment/success` → Signature verification
-5. Order marked as **paid & processed**
+5. Payment marked as **success**
+6. Order marked as **paid & processed**
 
 ---
 

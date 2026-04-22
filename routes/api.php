@@ -15,16 +15,15 @@ use App\Http\Controllers\API\AdminCartController;
 |--------------------------------------------------------------------------
 */
 
-// Authentication (Public)
-Route::prefix('auth')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
+Route::prefix('auth')->name('auth.')->group(function () {
+    Route::post('register', [AuthController::class, 'register'])->name('register');
+    Route::post('login', [AuthController::class, 'login'])->name('login');
 });
 
 
 /*
 |--------------------------------------------------------------------------
-| Protected Routes (Auth: Sanctum)
+| Protected Routes
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->group(function () {
@@ -34,9 +33,9 @@ Route::middleware('auth:sanctum')->group(function () {
     | Auth
     |-------------------------
     */
-    Route::prefix('auth')->group(function () {
-        Route::post('/logout', [AuthController::class, 'logout']);
-        Route::get('/me', [AuthController::class, 'me']);
+    Route::prefix('auth')->name('auth.')->group(function () {
+        Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+        Route::get('me', [AuthController::class, 'me'])->name('me');
     });
 
 
@@ -45,7 +44,8 @@ Route::middleware('auth:sanctum')->group(function () {
     | Products
     |-------------------------
     */
-    Route::apiResource('products', ProductController::class);
+    Route::apiResource('products', ProductController::class)
+        ->names('products');
 
 
     /*
@@ -53,11 +53,15 @@ Route::middleware('auth:sanctum')->group(function () {
     | Cart
     |-------------------------
     */
-    Route::prefix('cart')->group(function () {
-        Route::get('/', [CartController::class, 'index']);       
-        Route::post('/add', [CartController::class, 'add']);     
-        Route::post('/update', [CartController::class, 'update']);
-        Route::delete('/remove', [CartController::class, 'remove']);
+    Route::prefix('cart')->name('cart.')->group(function () {
+
+        Route::get('/', [CartController::class, 'index'])->name('index');
+
+        Route::post('items', [CartController::class, 'add'])->name('add');
+
+        Route::patch('items/{item_id}', [CartController::class, 'update'])->name('update');
+
+        Route::delete('items/{item_id}', [CartController::class, 'remove'])->name('remove');
     });
 
 
@@ -66,7 +70,8 @@ Route::middleware('auth:sanctum')->group(function () {
     | Checkout
     |-------------------------
     */
-    Route::post('/checkout', [CheckoutController::class, 'checkout']);
+    Route::post('checkout', [CheckoutController::class, 'checkout'])
+        ->name('checkout');
 
 
     /*
@@ -74,38 +79,43 @@ Route::middleware('auth:sanctum')->group(function () {
     | Orders
     |-------------------------
     */
-    Route::prefix('orders')->group(function () {
-        Route::get('/', [OrderController::class, 'index']); 
-        Route::get('/{id}', [OrderController::class, 'show']); 
-        Route::post('/{id}/cancel', [OrderController::class, 'cancel']);
+    Route::prefix('orders')->name('orders.')->group(function () {
+
+        Route::get('/', [OrderController::class, 'index'])->name('index');
+
+        Route::get('{id}', [OrderController::class, 'show'])->name('show');
+
+        Route::patch('{id}/cancel', [OrderController::class, 'cancel'])->name('cancel');
     });
 
 
     /*
     |-------------------------
-    | Payment
+    | Payments
     |-------------------------
     */
-    Route::prefix('payment')->group(function () {
-        Route::post('/pay', [PaymentController::class, 'pay']);
-        Route::post('/success', [PaymentController::class, 'success']);
-        Route::post('/failed', [PaymentController::class, 'failed']);
+    Route::prefix('payments')->name('payments.')->group(function () {
+
+        Route::post('/', [PaymentController::class, 'pay'])->name('pay');
+
+        Route::post('success', [PaymentController::class, 'success'])->name('success');
+
+        Route::post('failed', [PaymentController::class, 'failed'])->name('failed');
     });
 
 
     /*
     |-------------------------
-    | CMS / Admin
+    | Admin / CMS
     |-------------------------
     */
-    Route::prefix('admin')->group(function () {
+    Route::prefix('admin')->name('admin.')->group(function () {
 
-        Route::get('/carts', [AdminCartController::class, 'index']);
+        Route::get('carts', [AdminCartController::class, 'index'])->name('carts.index');
 
-        Route::get('/carts/{id}', [AdminCartController::class, 'show']);
+        Route::get('carts/{id}', [AdminCartController::class, 'show'])->name('carts.show');
 
-        Route::get('/users/{user}/cart', [AdminCartController::class, 'showUserCart']);
-
+        Route::get('users/{user}/cart', [AdminCartController::class, 'showUserCart'])->name('users.cart');
     });
 
 });
