@@ -25,13 +25,22 @@ class ProductController extends Controller
      */
     public function index(): JsonResponse
     {
-        $products = $this->service->list();
+        try {
+            $products = $this->service->list();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Product list fetched successfully',
-            'data' => ProductResource::collection($products)
-        ], 200);
+            return response()->json([
+                'status' => true,
+                'message' => 'Product list fetched successfully',
+                'data' => ProductResource::collection($products)
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to fetch products',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -62,11 +71,22 @@ class ProductController extends Controller
      */
     public function show(Product $product): JsonResponse
     {
-        return response()->json([
-            'status' => true,
-            'message' => 'Product fetched successfully',
-            'data' => new ProductResource($product->load('images'))
-        ], 200);
+        try {
+            $product->load('images');
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Product fetched successfully',
+                'data' => new ProductResource($product)
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to fetch product',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

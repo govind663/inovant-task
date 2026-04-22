@@ -22,12 +22,25 @@ class PaymentController extends Controller
 
             $order = Order::findOrFail($request->order_id);
 
-            // Prevent duplicate payment
+            // Already paid check
             if ($order->is_paid) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Order already paid'
                 ], 400);
+            }
+
+            // Avoid duplicate pending payment
+            $existingPayment = Payment::where('order_id', $order->id)
+                ->where('status', 'pending')
+                ->first();
+
+            if ($existingPayment) {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Payment already initiated',
+                    'data' => new PaymentResource($existingPayment->load('order'))
+                ]);
             }
 
             $payment = Payment::create([
@@ -39,7 +52,7 @@ class PaymentController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Payment initiated',
+                'message' => 'Payment initiated successfully',
                 'data' => new PaymentResource($payment->load('order'))
             ]);
         });
@@ -52,24 +65,31 @@ class PaymentController extends Controller
     {
         return DB::transaction(function () use ($request) {
 
-            $payment = Payment::with('order')->findOrFail($request->payment_id);
+            $payment = Payment::with('order')
+                ->findOrFail($request->payment_id);
 
-            // Prevent duplicate success
+            // Already success check
             if ($payment->status === 'success') {
                 return response()->json([
                     'status' => true,
-                    'message' => 'Already marked as success'
+                    'message' => 'Payment already successful',
+                    'data' => new PaymentResource($payment)
                 ]);
             }
 
+            // Mark payment success
             $payment->markAsSuccess($request->all());
 
-            $payment->order->markAsPaid();
+            // Ensure order consistency
+            $payment->order->update([
+                'is_paid' => true,
+                'status' => 'paid'
+            ]);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Payment successful',
-                'data' => new PaymentResource($payment)
+                'data' => new PaymentResource($payment->fresh('order'))
             ]);
         });
     }
@@ -81,16 +101,31 @@ class PaymentController extends Controller
     {
         return DB::transaction(function () use ($request) {
 
-            $payment = Payment::with('order')->findOrFail($request->payment_id);
+            $payment = Payment::with('order')
+                ->findOrFail($request->payment_id);
 
+            // Already failed check
+            if ($payment->status === 'failed') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Payment already failed',
+                    'data' => new PaymentResource($payment)
+                ]);
+            }
+
+            // Mark failed
             $payment->markAsFailed($request->all());
 
-            $payment->order->markAsFailed();
+            // Sync order status
+            $payment->order->update([
+                'is_paid' => false,
+                'status' => 'failed'
+            ]);
 
             return response()->json([
                 'status' => false,
                 'message' => 'Payment failed',
-                'data' => new PaymentResource($payment)
+                'data' => new PaymentResource($payment->fresh('order'))
             ]);
         });
     }
