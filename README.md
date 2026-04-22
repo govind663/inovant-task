@@ -164,45 +164,79 @@ php artisan serve
 
 ---
 
-# 📬 API Endpoints
+# 📬 API Endpoints (Updated)
 
-## Auth
+---
 
-POST /api/auth/register
-POST /api/auth/login
-POST /api/auth/logout
-GET /api/auth/me
+## 🔐 Auth
 
-## Products
+| Method | Endpoint              | Description |
+|--------|----------------------|-------------|
+| POST   | /api/auth/register   | Register user |
+| POST   | /api/auth/login      | Login user |
+| POST   | /api/auth/logout     | Logout user (Auth required) |
+| GET    | /api/auth/me         | Get authenticated user |
 
-GET /api/products
-POST /api/products
-GET /api/products/{id}
-PUT /api/products/{id}
-DELETE /api/products/{id}
+---
 
-## Cart
+## 🛍️ Products
 
-GET /api/cart
-POST /api/cart/add
-POST /api/cart/update
-DELETE /api/cart/remove
+| Method | Endpoint              | Description |
+|--------|----------------------|-------------|
+| GET    | /api/products        | List all products |
+| POST   | /api/products        | Create product |
+| GET    | /api/products/{id}   | Get single product |
+| PUT    | /api/products/{id}   | Update product |
+| DELETE | /api/products/{id}   | Delete product |
 
-## Checkout
+---
 
-POST /api/checkout
+## 🛒 Cart
 
-## Orders
+| Method | Endpoint            | Description |
+|--------|--------------------|-------------|
+| GET    | /api/cart          | Get user cart |
+| POST   | /api/cart/add      | Add product to cart |
+| POST   | /api/cart/update   | Update cart item quantity |
+| DELETE | /api/cart/remove   | Remove item from cart |
 
-GET /api/orders
-GET /api/orders/{id}
-POST /api/orders/{id}/cancel
+---
 
-## Payment
+## 📦 Checkout
 
-POST /api/payment/pay
-POST /api/payment/success
-POST /api/payment/failed
+| Method | Endpoint        | Description |
+|--------|----------------|-------------|
+| POST   | /api/checkout  | Convert cart to order |
+
+---
+
+## 📦 Orders
+
+| Method | Endpoint                     | Description |
+|--------|-----------------------------|-------------|
+| GET    | /api/orders                 | Get user orders (paginated) |
+| GET    | /api/orders/{id}            | Get single order |
+| POST   | /api/orders/{id}/cancel     | Cancel order |
+
+---
+
+## 💳 Payment
+
+| Method | Endpoint                  | Description |
+|--------|--------------------------|-------------|
+| POST   | /api/payment/pay         | Initiate payment (Razorpay order) |
+| POST   | /api/payment/success     | Verify payment & mark success |
+| POST   | /api/payment/failed      | Mark payment as failed |
+
+---
+
+## 🧑‍💼 Admin (CMS)
+
+| Method | Endpoint                              | Description |
+|--------|----------------------------------------|-------------|
+| GET    | /api/admin/carts                      | Get all carts (paginated) |
+| GET    | /api/admin/carts/{id}                 | Get single cart |
+| GET    | /api/admin/users/{user}/cart          | Get specific user cart |
 
 ---
 
