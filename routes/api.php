@@ -7,33 +7,38 @@ use App\Http\Controllers\API\CartController;
 use App\Http\Controllers\API\CheckoutController;
 use App\Http\Controllers\API\PaymentController;
 use App\Http\Controllers\API\OrderController;
+use App\Http\Controllers\API\AdminCartController;
 
 /*
 |--------------------------------------------------------------------------
-| Public Auth Routes
+| Public Routes
 |--------------------------------------------------------------------------
 */
+
+// 🔐 Authentication (Public)
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 });
 
+
 /*
 |--------------------------------------------------------------------------
-| Protected Routes (Sanctum)
+| Protected Routes (Auth: Sanctum)
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->group(function () {
 
     /*
     |-------------------------
-    | Auth Protected
+    | Auth
     |-------------------------
     */
     Route::prefix('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
     });
+
 
     /*
     |-------------------------
@@ -42,17 +47,19 @@ Route::middleware('auth:sanctum')->group(function () {
     */
     Route::apiResource('products', ProductController::class);
 
+
     /*
     |-------------------------
     | Cart
     |-------------------------
     */
     Route::prefix('cart')->group(function () {
-        Route::get('/', [CartController::class, 'index']);       // Get cart
-        Route::post('/add', [CartController::class, 'add']);     // Add item
-        Route::post('/update', [CartController::class, 'update']);// Update qty
-        Route::delete('/remove', [CartController::class, 'remove']); // Remove item ✅ REST fix
+        Route::get('/', [CartController::class, 'index']);       
+        Route::post('/add', [CartController::class, 'add']);     
+        Route::post('/update', [CartController::class, 'update']);
+        Route::delete('/remove', [CartController::class, 'remove']);
     });
+
 
     /*
     |-------------------------
@@ -60,6 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
     |-------------------------
     */
     Route::post('/checkout', [CheckoutController::class, 'checkout']);
+
 
     /*
     |-------------------------
@@ -72,6 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{id}/cancel', [OrderController::class, 'cancel']);
     });
 
+
     /*
     |-------------------------
     | Payment
@@ -82,4 +91,21 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/success', [PaymentController::class, 'success']);
         Route::post('/failed', [PaymentController::class, 'failed']);
     });
+
+
+    /*
+    |-------------------------
+    | CMS / Admin
+    |-------------------------
+    */
+    Route::prefix('admin')->group(function () {
+
+        Route::get('/carts', [AdminCartController::class, 'index']);
+
+        Route::get('/carts/{id}', [AdminCartController::class, 'show']);
+
+        Route::get('/users/{user}/cart', [AdminCartController::class, 'showUserCart']);
+
+    });
+
 });
