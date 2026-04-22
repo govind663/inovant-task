@@ -26,6 +26,7 @@ class Payment extends Model
      * Casts
      */
     protected $casts = [
+        'amount' => 'decimal:2',
         'response' => 'array',
     ];
 
@@ -50,6 +51,11 @@ class Payment extends Model
             'status' => 'success',
             'response' => $response,
         ]);
+
+        // Also update order
+        if ($this->order) {
+            $this->order->markAsPaid();
+        }
     }
 
     // Mark payment as failed
@@ -59,5 +65,29 @@ class Payment extends Model
             'status' => 'failed',
             'response' => $response,
         ]);
+
+        // Also update order
+        if ($this->order) {
+            $this->order->markAsFailed();
+        }
+    }
+
+    /**
+     * Helper Check Methods
+     */
+
+    public function isSuccess()
+    {
+        return $this->status === 'success';
+    }
+
+    public function isFailed()
+    {
+        return $this->status === 'failed';
+    }
+
+    public function isPending()
+    {
+        return $this->status === 'pending';
     }
 }

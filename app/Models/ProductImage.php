@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\AuditTrail;
+use Illuminate\Support\Facades\Storage;
 
 class ProductImage extends Model
 {
@@ -24,6 +25,13 @@ class ProductImage extends Model
     protected $appends = ['image_url'];
 
     /**
+     * Hidden fields (optional cleanup)
+     */
+    protected $hidden = [
+        'image_path',
+    ];
+
+    /**
      * Relationships
      */
 
@@ -37,9 +45,11 @@ class ProductImage extends Model
      * Accessors
      */
 
-    // Full image URL for API response
+    // Full image URL for API response (safe + flexible)
     public function getImageUrlAttribute()
     {
-        return asset('storage/' . $this->image_path);
+        return $this->image_path
+            ? Storage::url($this->image_path)
+            : null;
     }
 }

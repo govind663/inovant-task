@@ -18,8 +18,10 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
-            $table->string('image_path');
+            // Increased length for safety (long paths / CDN URLs)
+            $table->string('image_path', 500);
 
+            // Audit fields
             $table->foreignId('created_by')
                 ->nullable()
                 ->constrained('users')
@@ -36,8 +38,10 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->softDeletes();
-
             $table->timestamps();
+
+            // Performance index
+            $table->index('product_id');
         });
     }
 

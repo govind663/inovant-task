@@ -30,6 +30,13 @@ class Product extends Model
     protected $appends = ['images_count'];
 
     /**
+     * Casts
+     */
+    protected $casts = [
+        'price' => 'decimal:2',
+    ];
+
+    /**
      * Relationships
      */
 
@@ -49,9 +56,19 @@ class Product extends Model
      * Accessors
      */
 
-    // Get total images count
+    // Optimized: no extra query
     public function getImagesCountAttribute()
     {
-        return $this->images()->count();
+        return $this->images->count();
+    }
+
+    /**
+     * Scopes (Optional but useful)
+     */
+
+    // Latest products
+    public function scopeLatestFirst($query)
+    {
+        return $query->latest();
     }
 }

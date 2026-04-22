@@ -18,14 +18,24 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
-            $table->enum('status', ['active', 'checked_out', 'abandoned'])
-                ->default('active');
+            // Improved status
+            $table->enum('status', [
+                'active',
+                'checked_out',
+                'abandoned',
+                'expired'
+            ])->default('active');
 
-            $table->decimal('total_amount', 10, 2)->default(0);
-            $table->unsignedInteger('total_items')->default(0);
+            // Improved precision
+            $table->decimal('total_amount', 12, 2)->default(0);
 
-            $table->timestamp('last_activity_at')->nullable();
+            // Improved datatype
+            $table->unsignedBigInteger('total_items')->default(0);
 
+            // Default current timestamp
+            $table->timestamp('last_activity_at')->useCurrent();
+
+            // Audit fields
             $table->foreignId('created_by')
                 ->nullable()
                 ->constrained('users')
@@ -42,9 +52,9 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->softDeletes();
-
             $table->timestamps();
 
+            // Index for performance
             $table->index(['user_id', 'status']);
         });
     }

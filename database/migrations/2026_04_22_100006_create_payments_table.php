@@ -18,20 +18,29 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
-            $table->string('transaction_id')->nullable()
+            // Transaction ID (should be unique if exists)
+            $table->string('transaction_id')->nullable()->unique()
                 ->comment('Payment gateway transaction ID');
 
-            $table->string('gateway')->nullable()
-                ->comment('Payment gateway (e.g., Razorpay)');
+            // Gateway name (Razorpay, Stripe, etc.)
+            $table->string('gateway')->default('razorpay')
+                ->comment('Payment gateway');
 
-            $table->decimal('amount', 10, 2);
+            // Improved precision
+            $table->decimal('amount', 12, 2);
 
-            $table->enum('status', ['pending', 'success', 'failed'])
-                ->default('pending');
+            // Status improved
+            $table->enum('status', [
+                'pending',
+                'success',
+                'failed',
+                'refunded'
+            ])->default('pending');
 
-            // Full response from gateway
+            // Full gateway response
             $table->json('response')->nullable();
 
+            // Audit fields
             $table->foreignId('created_by')
                 ->nullable()
                 ->constrained('users')
@@ -48,11 +57,11 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->softDeletes();
-
             $table->timestamps();
 
-            // Optional index
+            // Performance indexes
             $table->index(['order_id', 'status']);
+            $table->index('transaction_id');
         });
     }
 

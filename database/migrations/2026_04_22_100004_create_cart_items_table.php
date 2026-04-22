@@ -22,11 +22,14 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
+            // Quantity improved (future safe)
             $table->unsignedInteger('quantity')->default(1);
 
-            $table->decimal('price', 10, 2)
+            // Improved price precision
+            $table->decimal('price', 12, 2)
                 ->comment('Product price at the time of adding to cart');
 
+            // Audit fields
             $table->foreignId('created_by')
                 ->nullable()
                 ->constrained('users')
@@ -43,10 +46,14 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->softDeletes();
-
             $table->timestamps();
 
+            // Prevent duplicate product in same cart
             $table->unique(['cart_id', 'product_id']);
+
+            // Performance indexes
+            $table->index('cart_id');
+            $table->index('product_id');
         });
     }
 

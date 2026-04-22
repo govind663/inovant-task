@@ -25,6 +25,7 @@ class Order extends Model
      * Casts
      */
     protected $casts = [
+        'total_amount' => 'decimal:2',
         'is_paid' => 'boolean',
         'is_processed' => 'boolean',
     ];
@@ -37,6 +38,12 @@ class Order extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    // One order has many items (IMPORTANT)
+    public function items()
+    {
+        return $this->hasMany(OrderItem::class)->with('product');
     }
 
     // One order has one payment
@@ -65,5 +72,23 @@ class Order extends Model
             'is_processed' => true,
             'status' => 'completed',
         ]);
+    }
+
+    // Mark order as failed (IMPORTANT)
+    public function markAsFailed()
+    {
+        $this->update([
+            'status' => 'failed',
+        ]);
+    }
+
+    /**
+     * Accessors
+     */
+
+    // Total items count (optional)
+    public function getItemsCountAttribute()
+    {
+        return $this->items->count();
     }
 }

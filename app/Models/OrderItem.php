@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\AuditTrail;
 
-class CartItem extends Model
+class OrderItem extends Model
 {
     use SoftDeletes, AuditTrail;
 
@@ -14,7 +14,7 @@ class CartItem extends Model
      * Mass Assignable Fields
      */
     protected $fillable = [
-        'cart_id',
+        'order_id',
         'product_id',
         'quantity',
         'price',
@@ -29,49 +29,25 @@ class CartItem extends Model
     ];
 
     /**
-     * Append custom attributes
-     */
-    protected $appends = ['total_price'];
-
-    /**
      * Relationships
      */
 
-    // Item belongs to cart
-    public function cart()
+    public function order()
     {
-        return $this->belongsTo(Cart::class);
+        return $this->belongsTo(Order::class);
     }
 
-    // Item belongs to product (auto eager load)
     public function product()
     {
         return $this->belongsTo(Product::class);
     }
 
     /**
-     * Accessors
+     * Accessor
      */
 
-    // Total price for this item (safe)
     public function getTotalPriceAttribute()
     {
         return (float) $this->price * $this->quantity;
-    }
-
-    /**
-     * Helper Methods (Optional)
-     */
-
-    // Increase quantity
-    public function increaseQuantity(int $qty = 1)
-    {
-        $this->increment('quantity', $qty);
-    }
-
-    // Decrease quantity
-    public function decreaseQuantity(int $qty = 1)
-    {
-        $this->decrement('quantity', $qty);
     }
 }

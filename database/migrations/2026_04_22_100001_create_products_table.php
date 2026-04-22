@@ -15,12 +15,15 @@ return new class extends Migration
             $table->id();
 
             $table->string('name');
-            $table->decimal('price', 10, 2);
+
+            // Improved precision
+            $table->decimal('price', 12, 2);
 
             $table->foreignId('user_id')
                 ->constrained()
                 ->cascadeOnDelete();
 
+            // Audit fields
             $table->foreignId('created_by')
                 ->nullable()
                 ->constrained('users')
@@ -37,8 +40,11 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->softDeletes();
-
             $table->timestamps();
+
+            // Performance indexes
+            $table->index('user_id');
+            $table->index('price');
         });
     }
 
