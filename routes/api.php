@@ -6,6 +6,7 @@ use App\Http\Controllers\API\Auth\AuthController;
 use App\Http\Controllers\API\CartController;
 use App\Http\Controllers\API\CheckoutController;
 use App\Http\Controllers\API\PaymentController;
+use App\Http\Controllers\API\OrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,8 +14,8 @@ use App\Http\Controllers\API\PaymentController;
 |--------------------------------------------------------------------------
 */
 Route::prefix('auth')->group(function () {
-    Route::post('register', [AuthController::class, 'register']);
-    Route::post('login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
 });
 
 /*
@@ -26,43 +27,54 @@ Route::middleware('auth:sanctum')->group(function () {
 
     /*
     |-------------------------
-    | Auth Protected Routes
+    | Auth Protected
     |-------------------------
     */
     Route::prefix('auth')->group(function () {
-        Route::post('logout', [AuthController::class, 'logout']);
-        Route::get('me', [AuthController::class, 'me']);
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::get('/me', [AuthController::class, 'me']);
     });
 
     /*
     |-------------------------
-    | Product Routes
+    | Products
     |-------------------------
     */
     Route::apiResource('products', ProductController::class);
 
     /*
     |-------------------------
-    | Cart Routes
+    | Cart
     |-------------------------
     */
     Route::prefix('cart')->group(function () {
-        Route::get('/', [CartController::class, 'index']);
-        Route::post('/add', [CartController::class, 'add']);
-        Route::post('/update', [CartController::class, 'update']);
-        Route::post('/remove', [CartController::class, 'remove']);
+        Route::get('/', [CartController::class, 'index']);       // Get cart
+        Route::post('/add', [CartController::class, 'add']);     // Add item
+        Route::post('/update', [CartController::class, 'update']);// Update qty
+        Route::delete('/remove', [CartController::class, 'remove']); // Remove item ✅ REST fix
     });
 
     /*
     |-------------------------
-    | Checkout Route
+    | Checkout
     |-------------------------
     */
     Route::post('/checkout', [CheckoutController::class, 'checkout']);
 
     /*
     |-------------------------
-    | Payment Routes
+    | Orders
+    |-------------------------
+    */
+    Route::prefix('orders')->group(function () {
+        Route::get('/', [OrderController::class, 'index']); 
+        Route::get('/{id}', [OrderController::class, 'show']); 
+        Route::post('/{id}/cancel', [OrderController::class, 'cancel']);
+    });
+
+    /*
+    |-------------------------
+    | Payment
     |-------------------------
     */
     Route::prefix('payment')->group(function () {
