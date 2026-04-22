@@ -66,8 +66,8 @@ Route::middleware('auth:sanctum')->group(function () {
     |-------------------------
     */
     Route::prefix('payment')->group(function () {
-        // Route::post('/pay', [PaymentController::class, 'pay']);       // initiate payment
-        // Route::post('/success', [PaymentController::class, 'success']); // success callback
-        // Route::post('/failed', [PaymentController::class, 'failed']);   // failed callback
+        Route::post('/pay', [PaymentController::class, 'pay']);
+        Route::post('/success', [PaymentController::class, 'success']);
+        Route::post('/failed', [PaymentController::class, 'failed']);
     });
 });
