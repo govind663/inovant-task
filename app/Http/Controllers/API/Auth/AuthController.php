@@ -9,8 +9,8 @@ use App\Http\Resources\AuthResource;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\JsonResponse;
-use Exception;
 use Illuminate\Support\Facades\Auth;
+use Exception;
 
 class AuthController extends Controller
 {
@@ -23,7 +23,7 @@ class AuthController extends Controller
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
-                'password' => $request->password,
+                'password' => Hash::make($request->password),
             ]);
 
             $token = $user->createToken('auth_token')->plainTextToken;
@@ -31,8 +31,10 @@ class AuthController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'User registered successfully',
-                'token' => $token,
-                'data' => new AuthResource($user)
+                'data' => [
+                    'token' => $token,
+                    'user' => new AuthResource($user),
+                ]
             ], 201);
 
         } catch (Exception $e) {
@@ -50,29 +52,32 @@ class AuthController extends Controller
     public function login(LoginRequest $request): JsonResponse
     {
         try {
-            $user = User::where('email', $request->email)->first();
-
-            if (!$user || !Hash::check($request->password, $user->password)) {
+            if (!Auth::attempt($request->only('email', 'password'))) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Invalid credentials'
                 ], 401);
             }
 
+            $user = Auth::user();
+
+            $user->tokens()->delete();
+
             $token = $user->createToken('auth_token')->plainTextToken;
 
             return response()->json([
                 'status' => true,
                 'message' => 'Login successful',
-                'token' => $token,
-                'data' => new AuthResource($user)
-            ], 200);
+                'data' => [
+                    'token' => $token,
+                    'user' => new AuthResource($user),
+                ]
+            ]);
 
         } catch (Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => 'Login failed',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -82,7 +87,11 @@ class AuthController extends Controller
      */
     public function logout(): JsonResponse
     {
-        auth()->user()->currentAccessToken()->delete();
+        $user = auth()->user();
+
+        if ($user && $user->currentAccessToken()) {
+            $user->currentAccessToken()->delete();
+        }
 
         return response()->json([
             'status' => true,
