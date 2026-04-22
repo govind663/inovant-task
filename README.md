@@ -178,5 +178,5 @@ php artisan serve
 
 # 👨‍💻 Author
 
-**Abhishek Jha**
+**Abhishek Jha** 
 Laravel Developer
