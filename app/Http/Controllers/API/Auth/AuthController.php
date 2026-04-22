@@ -26,8 +26,9 @@ class AuthController extends Controller
 
                 $user = User::create([
                     'name' => $request->name,
-                    'email' => strtolower($request->email), // normalize email
+                    'email' => strtolower($request->email),
                     'password' => Hash::make($request->password),
+                    'role' => User::ROLE_USER, // ✅ role added
                 ]);
 
                 $token = $user->createToken('auth_token')->plainTextToken;
@@ -80,7 +81,7 @@ class AuthController extends Controller
 
             $user = Auth::user();
 
-            // Single device login (optional)
+            // Single device login
             $user->tokens()->delete();
 
             $token = $user->createToken('auth_token')->plainTextToken;
@@ -123,9 +124,7 @@ class AuthController extends Controller
                 ], 401);
             }
 
-            if ($user->currentAccessToken()) {
-                $user->currentAccessToken()->delete();
-            }
+            $user->currentAccessToken()?->delete();
 
             return response()->json([
                 'status' => true,

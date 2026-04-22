@@ -106,10 +106,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     /*
     |-------------------------
-    | Admin / CMS
+    | Admin / CMS (🔒 SECURED)
     |-------------------------
     */
-    Route::prefix('admin')->name('admin.')->group(function () {
+    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
 
         Route::get('carts', [AdminCartController::class, 'index'])->name('carts.index');
 

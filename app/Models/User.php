@@ -15,12 +15,19 @@ class User extends Authenticatable
     use HasFactory, Notifiable, SoftDeletes, AuditTrail, HasApiTokens;
 
     /**
+     * Role Constants
+     */
+    public const ROLE_USER = 'user';
+    public const ROLE_ADMIN = 'admin';
+
+    /**
      * Mass Assignable Fields
      */
     protected $fillable = [
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -40,22 +47,45 @@ class User extends Authenticatable
     ];
 
     /**
-     * Relationships
+     * =========================
+     * 🔐 Role Helpers
+     * =========================
      */
 
-    // One user has many products
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function isUser(): bool
+    {
+        return $this->role === self::ROLE_USER;
+    }
+
+    /**
+     * (Optional 🔥) Scope for admin users
+     */
+    public function scopeAdmins($query)
+    {
+        return $query->where('role', self::ROLE_ADMIN);
+    }
+
+    /**
+     * =========================
+     * Relationships
+     * =========================
+     */
+
     public function products()
     {
         return $this->hasMany(Product::class);
     }
 
-    // One user has many carts
     public function carts()
     {
         return $this->hasMany(Cart::class);
     }
 
-    // One user has many orders
     public function orders()
     {
         return $this->hasMany(Order::class);

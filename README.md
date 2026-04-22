@@ -240,6 +240,7 @@ php artisan serve
 
 ---
 
+
 # 📌 Notes
 
 - 🔐 All protected routes require **Bearer Token (Sanctum)**
@@ -251,6 +252,20 @@ php artisan serve
 - ⚠️ Proper error handling & logging implemented for debugging
 - 🧠 Business logic handled via **Service Layer**
 - ✅ Request validation handled via **FormRequest classes**
+
+---
+
+## 🔑 Demo Credentials
+
+### 👤 User
+- **Email:** user@gmail.com  
+- **Password:** user@123  
+
+### 🧑‍💼 Admin
+- **Email:** admin@gmail.com  
+- **Password:** admin@123  
+
+> ℹ️ Note: You can change roles directly from database (`users.role = admin/user`)
 
 ---
 

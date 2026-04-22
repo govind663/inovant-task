@@ -27,7 +27,10 @@ class ProductController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $products = $this->service->list(); // already paginated
+            $products = $this->service->list();
+
+            // ✅ Fix N+1 issue
+            $products->getCollection()->load('images');
 
             return response()->json([
                 'status' => true,
@@ -39,7 +42,7 @@ class ProductController extends Controller
                     'per_page' => $products->perPage(),
                     'total' => $products->total(),
                 ]
-            ]);
+            ], 200);
 
         } catch (Exception $e) {
             Log::error('Product List Failed', [
@@ -70,7 +73,7 @@ class ProductController extends Controller
 
         } catch (Exception $e) {
             Log::error('Product Store Failed', [
-                'data' => $request->all(),
+                'data' => $request->only(['name', 'price']), // ✅ safe logging
                 'error' => $e->getMessage()
             ]);
 
@@ -94,7 +97,7 @@ class ProductController extends Controller
                 'status' => true,
                 'message' => 'Product fetched successfully',
                 'data' => new ProductResource($product)
-            ]);
+            ], 200);
 
         } catch (Exception $e) {
             Log::error('Product Fetch Failed', [
@@ -122,12 +125,12 @@ class ProductController extends Controller
                 'status' => true,
                 'message' => 'Product updated successfully',
                 'data' => new ProductResource($product)
-            ]);
+            ], 200);
 
         } catch (Exception $e) {
             Log::error('Product Update Failed', [
                 'product_id' => $product->id,
-                'data' => $request->all(),
+                'data' => $request->only(['name', 'price']), // ✅ safe logging
                 'error' => $e->getMessage()
             ]);
 
@@ -150,7 +153,7 @@ class ProductController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Product deleted successfully'
-            ]);
+            ], 200);
 
         } catch (Exception $e) {
             Log::error('Product Delete Failed', [

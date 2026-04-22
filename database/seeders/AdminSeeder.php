@@ -3,11 +3,11 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Carbon\Carbon;
 
-class UserSeeder extends Seeder
+class AdminSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -15,11 +15,11 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         User::create([
-            'name'              => 'Test User',
-            'email'             => 'user@gmail.com',
-            'email_verified_at' => Carbon::now(),
-            'password'          => Hash::make('user@123'),
-            'role'              => 'user',
+            'name' => 'Admin',
+            'email' => 'admin@gmail.com',
+            'password' => Hash::make('admin@123'),
+            'role' => 'admin',
+
             // Audit
             'created_by'        => 1,
         ]);

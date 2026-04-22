@@ -15,14 +15,20 @@ return Application::configure(basePath: dirname(__DIR__))
 
     ->withMiddleware(function (Middleware $middleware): void {
 
+        // Sanctum (for SPA / frontend support)
         $middleware->api(prepend: [
             EnsureFrontendRequestsAreStateful::class,
+        ]);
+
+        // ✅ Custom Middleware Alias (Laravel 13 way)
+        $middleware->alias([
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
     })
 
     ->withExceptions(function (Exceptions $exceptions): void {
 
-        // API exception formatting (clean JSON response)
+        // Clean JSON API Error Response
         $exceptions->render(function (\Throwable $e, $request) {
 
             if ($request->expectsJson()) {
