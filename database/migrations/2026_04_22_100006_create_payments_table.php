@@ -15,24 +15,44 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('order_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->constrained()
+                ->cascadeOnDelete();
 
-            $table->string('payment_id')->nullable()->comment('Razorpay payment ID');
-            $table->string('method')->nullable()->comment('Payment method used (e.g., Razorpay)');
+            $table->string('transaction_id')->nullable()
+                ->comment('Payment gateway transaction ID');
+
+            $table->string('gateway')->nullable()
+                ->comment('Payment gateway (e.g., Razorpay)');
+
             $table->decimal('amount', 10, 2);
 
-            $table->enum('status', ['pending', 'success', 'failed'])->default('pending');
+            $table->enum('status', ['pending', 'success', 'failed'])
+                ->default('pending');
 
+            // Full response from gateway
             $table->json('response')->nullable();
 
-            $table->unsignedBigInteger('created_by')->nullable()->index();
-            $table->unsignedBigInteger('updated_by')->nullable()->index();
-            $table->unsignedBigInteger('deleted_by')->nullable()->index();
+            $table->foreignId('created_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('updated_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('deleted_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             $table->softDeletes();
 
             $table->timestamps();
+
+            // Optional index
+            $table->index(['order_id', 'status']);
         });
     }
 

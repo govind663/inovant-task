@@ -15,14 +15,25 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('product_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->constrained()
+                ->cascadeOnDelete();
 
             $table->string('image_path');
 
-            $table->unsignedBigInteger('created_by')->nullable()->index();
-            $table->unsignedBigInteger('updated_by')->nullable()->index();
-            $table->unsignedBigInteger('deleted_by')->nullable()->index();
+            $table->foreignId('created_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('updated_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('deleted_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             $table->softDeletes();
 

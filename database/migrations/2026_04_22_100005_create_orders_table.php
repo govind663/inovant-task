@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
 
-            $table->unsignedBigInteger('user_id')->index();
+            $table->foreignId('user_id')
+                ->constrained()
+                ->cascadeOnDelete();
 
             $table->decimal('total_amount', 10, 2);
 
@@ -22,15 +24,28 @@ return new class extends Migration
             $table->boolean('is_processed')->default(false);
 
             $table->enum('status', ['pending', 'paid', 'failed', 'completed'])
-                  ->default('pending');
+                ->default('pending');
 
-            $table->unsignedBigInteger('created_by')->nullable()->index();
-            $table->unsignedBigInteger('updated_by')->nullable()->index();
-            $table->unsignedBigInteger('deleted_by')->nullable()->index();
+            $table->foreignId('created_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('updated_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('deleted_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             $table->softDeletes();
 
             $table->timestamps();
+
+            $table->index(['user_id', 'status']);
         });
     }
 

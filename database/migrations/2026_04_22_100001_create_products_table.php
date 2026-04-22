@@ -17,15 +17,25 @@ return new class extends Migration
             $table->string('name');
             $table->decimal('price', 10, 2);
 
-            // As per requirement (hardcoded user_id = 1 but scalable)
-            $table->unsignedBigInteger('user_id')->index();
+            $table->foreignId('user_id')
+                ->constrained()
+                ->cascadeOnDelete();
 
-            // 🔍 Audit Columns
-            $table->unsignedBigInteger('created_by')->nullable()->index();
-            $table->unsignedBigInteger('updated_by')->nullable()->index();
-            $table->unsignedBigInteger('deleted_by')->nullable()->index();
+            $table->foreignId('created_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
-            // Soft Delete (required for deleted_by)
+            $table->foreignId('updated_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('deleted_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
             $table->softDeletes();
 
             $table->timestamps();

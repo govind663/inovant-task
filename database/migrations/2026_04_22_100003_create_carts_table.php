@@ -14,18 +14,32 @@ return new class extends Migration
         Schema::create('carts', function (Blueprint $table) {
             $table->id();
 
-            $table->unsignedBigInteger('user_id')->index();
+            $table->foreignId('user_id')
+                ->constrained()
+                ->cascadeOnDelete();
 
-            $table->enum('status', ['active', 'checked_out', 'abandoned'])->default('active');
+            $table->enum('status', ['active', 'checked_out', 'abandoned'])
+                ->default('active');
 
             $table->decimal('total_amount', 10, 2)->default(0);
             $table->unsignedInteger('total_items')->default(0);
 
             $table->timestamp('last_activity_at')->nullable();
 
-            $table->unsignedBigInteger('created_by')->nullable()->index();
-            $table->unsignedBigInteger('updated_by')->nullable()->index();
-            $table->unsignedBigInteger('deleted_by')->nullable()->index();
+            $table->foreignId('created_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('updated_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('deleted_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             $table->softDeletes();
 
