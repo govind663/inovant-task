@@ -14,21 +14,21 @@ class PayRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // User must be logged in
         if (!Auth::check()) {
             return false;
         }
 
-        // Get order_id safely
         $orderId = $this->input('order_id');
 
         if (!$orderId) {
             return false;
         }
 
-        // Check ownership using optimized query
+        // Ownership + Only pending & unpaid orders allowed
         return Order::where('id', $orderId)
             ->where('user_id', Auth::id())
+            ->where('status', 'pending')
+            ->where('is_paid', false)
             ->exists();
     }
 
@@ -38,7 +38,7 @@ class PayRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'order_id' => 'required|exists:orders,id'
+            'order_id' => 'required|exists:orders,id',
         ];
     }
 

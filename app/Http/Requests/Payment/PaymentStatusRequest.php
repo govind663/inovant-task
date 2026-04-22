@@ -14,20 +14,19 @@ class PaymentStatusRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // User must be logged in
         if (!Auth::check()) {
             return false;
         }
 
-        // Get payment_id safely
         $paymentId = $this->input('payment_id');
 
         if (!$paymentId) {
             return false;
         }
 
-        // Check ownership via order relation
+        // Secure + Only pending payments allowed
         return Payment::where('id', $paymentId)
+            ->where('status', 'pending')
             ->whereHas('order', function ($query) {
                 $query->where('user_id', Auth::id());
             })
@@ -40,7 +39,7 @@ class PaymentStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'payment_id' => 'required|exists:payments,id'
+            'payment_id' => 'required|exists:payments,id',
         ];
     }
 

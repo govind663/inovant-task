@@ -7,6 +7,7 @@ use App\Models\ProductImage;
 use App\Repositories\ProductRepository;
 use App\Traits\UploadFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class ProductService
 {
@@ -29,22 +30,16 @@ class ProductService
             $product = $this->repo->create([
                 'name' => $request->name,
                 'price' => $request->price,
-                'user_id' => 1,
+                'user_id' => Auth::id() ?? 1, // fallback safe
             ]);
 
             if ($request->hasFile('images')) {
-
                 $paths = $this->uploadMultiple(
                     $request->file('images'),
                     'products'
                 );
 
-                foreach ($paths as $path) {
-                    ProductImage::create([
-                        'product_id' => $product->id,
-                        'image_path' => $path,
-                    ]);
-                }
+                $this->saveImages($product->id, $paths);
             }
 
             return $product->load('images');
@@ -52,7 +47,7 @@ class ProductService
     }
 
     /**
-     * Update Product (Partial Image Update)
+     * Update Product
      */
     public function update($request, Product $product)
     {
@@ -62,27 +57,21 @@ class ProductService
             $this->repo->update($product, $request->only('name', 'price'));
 
             /**
-             * ✅ Add New Images (DO NOT delete old)
+             * Add New Images
              */
             if ($request->hasFile('images')) {
-
                 $paths = $this->uploadMultiple(
                     $request->file('images'),
                     'products'
                 );
 
-                foreach ($paths as $path) {
-                    ProductImage::create([
-                        'product_id' => $product->id,
-                        'image_path' => $path,
-                    ]);
-                }
+                $this->saveImages($product->id, $paths);
             }
 
             /**
-             * ✅ Delete Selected Images Only
+             * Delete Selected Images
              */
-            if ($request->has('delete_images')) {
+            if ($request->filled('delete_images')) {
 
                 $images = $product->images()
                     ->whereIn('id', $request->delete_images)
@@ -90,9 +79,9 @@ class ProductService
 
                 if ($images->isNotEmpty()) {
 
-                    $paths = $images->pluck('image_path')->toArray();
-
-                    $this->deleteFiles($paths);
+                    $this->deleteFiles(
+                        $images->pluck('image_path')->toArray()
+                    );
 
                     $product->images()
                         ->whereIn('id', $request->delete_images)
@@ -105,15 +94,15 @@ class ProductService
     }
 
     /**
-     * Delete Product (with image cleanup)
+     * Delete Product
      */
     public function delete(Product $product)
     {
         return DB::transaction(function () use ($product) {
 
-            $paths = $product->images()->pluck('image_path')->toArray();
-
-            $this->deleteFiles($paths);
+            $this->deleteFiles(
+                $product->images()->pluck('image_path')->toArray()
+            );
 
             $product->images()->delete();
 
@@ -122,10 +111,23 @@ class ProductService
     }
 
     /**
-     * Get Product List
+     * Get Product List (with pagination)
      */
-    public function list()
+    public function list(int $perPage = 10)
     {
-        return $this->repo->all();
+        return $this->repo->all($perPage);
+    }
+
+    /**
+     * Save multiple images (helper)
+     */
+    private function saveImages(int $productId, array $paths): void
+    {
+        foreach ($paths as $path) {
+            ProductImage::create([
+                'product_id' => $productId,
+                'image_path' => $path,
+            ]);
+        }
     }
 }

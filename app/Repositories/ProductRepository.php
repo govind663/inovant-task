@@ -7,27 +7,21 @@ use App\Models\Product;
 class ProductRepository
 {
     /**
-     * Get all products (latest first)
+     * Get all products (with pagination & images)
      */
-    public function all()
+    public function all(int $perPage = 10)
     {
-        return Product::latest()->get();
+        return Product::with('images')
+            ->latest()
+            ->paginate($perPage);
     }
 
     /**
-     * Get all products with images (explicit eager loading)
-     */
-    public function withImages()
-    {
-        return Product::with('images')->latest()->get();
-    }
-
-    /**
-     * Find product by ID
+     * Find product by ID with images
      */
     public function find(int $id): ?Product
     {
-        return Product::find($id);
+        return Product::with('images')->find($id);
     }
 
     /**

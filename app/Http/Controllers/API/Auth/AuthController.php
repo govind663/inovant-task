@@ -10,6 +10,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Exception;
 
 class AuthController extends Controller
@@ -20,28 +22,32 @@ class AuthController extends Controller
     public function register(RegisterRequest $request): JsonResponse
     {
         try {
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-            ]);
+            return DB::transaction(function () use ($request) {
 
-            $token = $user->createToken('auth_token')->plainTextToken;
+                $user = User::create([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'password' => Hash::make($request->password),
+                ]);
 
-            return response()->json([
-                'status' => true,
-                'message' => 'User registered successfully',
-                'data' => [
-                    'token' => $token,
-                    'user' => new AuthResource($user),
-                ]
-            ], 201);
+                $token = $user->createToken('auth_token')->plainTextToken;
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'User registered successfully',
+                    'data' => [
+                        'token' => $token,
+                        'user' => new AuthResource($user),
+                    ]
+                ], 201);
+            });
 
         } catch (Exception $e) {
+            Log::error('Registration Failed', ['error' => $e->getMessage()]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Registration failed',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -61,6 +67,7 @@ class AuthController extends Controller
 
             $user = Auth::user();
 
+            // Revoke old tokens (single device login)
             $user->tokens()->delete();
 
             $token = $user->createToken('auth_token')->plainTextToken;
@@ -75,6 +82,8 @@ class AuthController extends Controller
             ]);
 
         } catch (Exception $e) {
+            Log::error('Login Failed', ['error' => $e->getMessage()]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'Login failed',
@@ -87,16 +96,26 @@ class AuthController extends Controller
      */
     public function logout(): JsonResponse
     {
-        $user = auth()->user();
+        try {
+            $user = auth()->user();
 
-        if ($user && $user->currentAccessToken()) {
-            $user->currentAccessToken()->delete();
+            if ($user && $user->currentAccessToken()) {
+                $user->currentAccessToken()->delete();
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Logout successful'
+            ]);
+
+        } catch (Exception $e) {
+            Log::error('Logout Failed', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Logout failed'
+            ], 500);
         }
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Logout successful'
-        ]);
     }
 
     /**

@@ -10,29 +10,30 @@ class CartResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'total_items' => $this->total_items,
-            'total_amount' => $this->total_amount,
-            'status' => $this->status,
+            'cart' => [
+                'id' => (int) $this->id,
+                'total_items' => (int) $this->total_items,
+                'total_amount' => (float) $this->total_amount,
+                'status' => (string) $this->status,
+                'last_activity_at' => $this->last_activity_at?->toDateTimeString(),
+            ],
 
-            'items' => $this->items->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'product_id' => $item->product_id,
-                    'product_name' => $item->product?->name,
-                    'price' => $item->price,
-                    'quantity' => $item->quantity,
-                    'total_price' => $item->total_price,
+            'items' => $this->whenLoaded('items', function () {
+                return $this->items->map(function ($item) {
+                    return [
+                        'id' => (int) $item->id,
+                        'quantity' => (int) $item->quantity,
+                        'price' => (float) $item->price,
+                        'total_price' => (float) $item->total_price,
 
-                    'product' => [
-                        'id' => $item->product?->id,
-                        'name' => $item->product?->name,
-                        'price' => $item->product?->price,
-                    ]
-                ];
+                        'product' => [
+                            'id' => $item->product?->id,
+                            'name' => $item->product?->name,
+                            'price' => $item->product?->price,
+                        ]
+                    ];
+                });
             }),
-
-            'last_activity_at' => $this->last_activity_at?->toDateTimeString(),
         ];
     }
 }

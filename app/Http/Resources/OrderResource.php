@@ -13,25 +13,24 @@ class OrderResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'user_id' => $this->user_id,
-
-            'total_amount' => $this->total_amount,
-            'status' => $this->status,
-            'is_paid' => $this->is_paid,
-            'is_processed' => $this->is_processed,
-
-            'items_count' => $this->items_count,
+            'order' => [
+                'id' => (int) $this->id,
+                'user_id' => (int) $this->user_id,
+                'total_amount' => (float) $this->total_amount,
+                'status' => (string) $this->status,
+                'is_paid' => (bool) $this->is_paid,
+                'is_processed' => (bool) $this->is_processed,
+                'items_count' => (int) $this->items_count,
+                'created_at' => $this->created_at?->toDateTimeString(),
+            ],
 
             'items' => $this->whenLoaded('items', function () {
                 return $this->items->map(function ($item) {
                     return [
-                        'id' => $item->id,
-                        'product_id' => $item->product_id,
-                        'product_name' => $item->product?->name,
-                        'price' => $item->price,
-                        'quantity' => $item->quantity,
-                        'total_price' => $item->total_price,
+                        'id' => (int) $item->id,
+                        'quantity' => (int) $item->quantity,
+                        'price' => (float) $item->price,
+                        'total_price' => (float) $item->total_price,
 
                         'product' => [
                             'id' => $item->product?->id,
@@ -44,15 +43,13 @@ class OrderResource extends JsonResource
 
             'payment' => $this->whenLoaded('payment', function () {
                 return [
-                    'id' => $this->payment?->id,
+                    'id' => (int) $this->payment?->id,
                     'transaction_id' => $this->payment?->transaction_id,
                     'gateway' => $this->payment?->gateway,
-                    'amount' => $this->payment?->amount,
+                    'amount' => (float) $this->payment?->amount,
                     'status' => $this->payment?->status,
                 ];
             }),
-
-            'created_at' => $this->created_at?->toDateTimeString(),
         ];
     }
 }

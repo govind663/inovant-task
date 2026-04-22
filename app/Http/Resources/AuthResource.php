@@ -13,16 +13,21 @@ class AuthResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => (int) $this->id,
-            'name' => (string) $this->name,
-            'email' => (string) $this->email,
+            'user' => [
+                'id' => (int) $this->id,
+                'name' => (string) $this->name,
+                'email' => (string) $this->email,
 
-            'email_verified_at' => $this->email_verified_at
-                ? $this->email_verified_at->toDateTimeString()
-                : null,
+                'email_verified_at' => $this->email_verified_at?->toDateTimeString(),
 
-            'created_at' => $this->created_at?->toDateTimeString(),
-            'updated_at' => $this->updated_at?->toDateTimeString(),
+                'created_at' => $this->created_at?->toDateTimeString(),
+                'updated_at' => $this->updated_at?->toDateTimeString(),
+            ],
+
+            // future-ready (token etc.)
+            'meta' => [
+                'is_email_verified' => !is_null($this->email_verified_at),
+            ],
         ];
     }
 }

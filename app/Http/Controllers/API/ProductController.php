@@ -26,7 +26,7 @@ class ProductController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $products = $this->service->list();
+            $products = $this->service->list()->load('images');
 
             return response()->json([
                 'status' => true,
@@ -38,7 +38,7 @@ class ProductController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to fetch products',
-                'error' => $e->getMessage()
+                'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }

@@ -10,6 +10,7 @@ use App\Models\OrderItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Exception;
 
 class CheckoutController extends Controller
 {
@@ -18,55 +19,90 @@ class CheckoutController extends Controller
      */
     public function checkout(): JsonResponse
     {
-        return DB::transaction(function () {
+        try {
+            return DB::transaction(function () {
 
-            // Get active cart
-            $cart = Cart::with('items.product')
-                ->where('user_id', Auth::id())
-                ->where('status', 'active')
-                ->first();
+                // Get active cart
+                $cart = Cart::with('items.product')
+                    ->where('user_id', Auth::id())
+                    ->where('status', 'active')
+                    ->first();
 
-            // Validate cart
-            if (!$cart || $cart->items->isEmpty()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Cart is empty'
-                ], 400);
-            }
+                // Validate cart
+                if (!$cart || $cart->items->isEmpty()) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Cart is empty'
+                    ], 400);
+                }
 
-            // Create Order
-            $order = Order::create([
-                'user_id' => Auth::id(),
-                'total_amount' => $cart->total_amount,
-                'status' => 'pending',
-            ]);
+                /**
+                 * Prevent duplicate checkout
+                 */
+                if ($cart->status !== 'active') {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Cart already checked out'
+                    ], 400);
+                }
 
-            // Create Order Items
-            foreach ($cart->items as $item) {
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $item->product_id,
-                    'quantity' => $item->quantity,
-                    'price' => $item->price,
+                /**
+                 * Create Order
+                 */
+                $order = Order::create([
+                    'user_id' => Auth::id(),
+                    'total_amount' => $cart->total_amount,
+                    'status' => 'pending',
                 ]);
-            }
 
-            // Update cart status
-            $cart->update([
-                'status' => 'checked_out'
-            ]);
+                /**
+                 * Create Order Items
+                 */
+                foreach ($cart->items as $item) {
 
-            // OPTIONAL: clear cart items
-            $cart->items()->delete();
+                    // Optional safety: product existence
+                    if (!$item->product) {
+                        continue;
+                    }
 
-            // Load relationships
-            $order->load(['items.product', 'payment']);
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_id' => $item->product_id,
+                        'quantity' => $item->quantity,
+                        'price' => $item->price,
+                    ]);
+                }
 
+                /**
+                 * Mark cart as checked_out
+                 */
+                $cart->update([
+                    'status' => 'checked_out'
+                ]);
+
+                /**
+                 * Clear cart items (optional but good)
+                 */
+                $cart->items()->delete();
+
+                /**
+                 * Load relationships
+                 */
+                $order->load(['items.product', 'payment']);
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Order placed successfully',
+                    'data' => new OrderResource($order)
+                ]);
+            });
+
+        } catch (Exception $e) {
             return response()->json([
-                'status' => true,
-                'message' => 'Order placed successfully',
-                'data' => new OrderResource($order)
-            ]);
-        });
+                'status' => false,
+                'message' => 'Checkout failed',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
     }
 }
