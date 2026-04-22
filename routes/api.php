@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\ProductController;
 use App\Http\Controllers\API\Auth\AuthController;
+use App\Http\Controllers\API\CartController;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,4 +38,16 @@ Route::middleware('auth:sanctum')->group(function () {
     |-------------------------
     */
     Route::apiResource('products', ProductController::class);
+
+    /*
+    |-------------------------
+    | Cart Routes
+    |-------------------------
+    */
+    Route::prefix('cart')->group(function () {
+        Route::get('/', [CartController::class, 'index']);          
+        Route::post('/add', [CartController::class, 'add']);        
+        Route::post('/update', [CartController::class, 'update']);  
+        Route::post('/remove', [CartController::class, 'remove']);  
+    });
 });
