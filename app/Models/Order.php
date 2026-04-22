@@ -1,0 +1,69 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\AuditTrail;
+
+class Order extends Model
+{
+    use SoftDeletes, AuditTrail;
+
+    /**
+     * Mass Assignable Fields
+     */
+    protected $fillable = [
+        'user_id',
+        'total_amount',
+        'is_paid',
+        'is_processed',
+        'status',
+    ];
+
+    /**
+     * Casts
+     */
+    protected $casts = [
+        'is_paid' => 'boolean',
+        'is_processed' => 'boolean',
+    ];
+
+    /**
+     * Relationships
+     */
+
+    // Order belongs to a user
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // One order has one payment
+    public function payment()
+    {
+        return $this->hasOne(Payment::class);
+    }
+
+    /**
+     * Helper Methods (Business Logic)
+     */
+
+    // Mark order as paid
+    public function markAsPaid()
+    {
+        $this->update([
+            'is_paid' => true,
+            'status' => 'paid',
+        ]);
+    }
+
+    // Mark order as processed
+    public function markAsProcessed()
+    {
+        $this->update([
+            'is_processed' => true,
+            'status' => 'completed',
+        ]);
+    }
+}
