@@ -269,6 +269,20 @@ php artisan serve
 
 ---
 
+## 🧪 Postman Collection
+
+- All APIs tested via Postman
+- Collection includes:
+  - Auth flow
+  - Cart flow
+  - Checkout flow
+  - Payment simulation
+
+👉 Import Postman Collection:
+<your-postman-link>
+
+---
+
 # 👨‍💻 Author
 
 **Abhishek Jha**  
