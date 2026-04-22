@@ -242,16 +242,29 @@ php artisan serve
 
 # 📌 Notes
 
-* Soft Deletes implemented
-* Audit Trail (created_by, updated_by, deleted_by)
-* Images stored via Laravel Storage
-* API built with scalability in mind
+- 🔐 All protected routes require **Bearer Token (Sanctum)**
+- 📦 Orders are created only after successful **checkout**
+- 💳 Payment uses **Razorpay integration with signature verification**
+- 🚫 Duplicate payments and duplicate checkout are prevented
+- 🛒 Cart is **user-specific and isolated**
+- 📄 Pagination implemented for **orders & admin carts**
+- ⚠️ Proper error handling & logging implemented for debugging
+- 🧠 Business logic handled via **Service Layer**
+- ✅ Request validation handled via **FormRequest classes**
 
 ---
 
 # 👨‍💻 Author
 
-**Abhishek Jha**
-Laravel Developer
+**Abhishek Jha**  
+Backend Developer (Laravel)  
+
+🔹 Skilled in building scalable REST APIs  
+🔹 Focused on clean architecture & performance  
+🔹 Experience with payment integration (Razorpay)  
+
+📧 Email: codingthunder1997@gmail.com  
+🔗 GitHub: https://github.com/govind663  
+🔗 LinkedIn: https://www.linkedin.com/in/abhishek-laravel-developer
 
 ---
