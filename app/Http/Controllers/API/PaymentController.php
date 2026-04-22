@@ -8,17 +8,19 @@ use App\Http\Requests\Payment\PaymentStatusRequest;
 use App\Http\Resources\PaymentResource;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Services\RazorpayService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
     /**
-     * Start Payment
+     * Start Payment (Razorpay Order Create)
      */
-    public function pay(PayRequest $request): JsonResponse
+    public function pay(PayRequest $request, RazorpayService $razorpay): JsonResponse
     {
-        return DB::transaction(function () use ($request) {
+        return DB::transaction(function () use ($request, $razorpay) {
 
             $order = Order::findOrFail($request->order_id);
 
@@ -43,30 +45,60 @@ class PaymentController extends Controller
                 ]);
             }
 
+            // ✅ Razorpay Order Create
+            $rzpOrder = $razorpay->createOrder($order->total_amount);
+
             $payment = Payment::create([
                 'order_id' => $order->id,
                 'amount' => $order->total_amount,
                 'status' => 'pending',
-                'gateway' => 'dummy'
+                'gateway' => 'razorpay',
+                'transaction_id' => $rzpOrder['id']
             ]);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Payment initiated successfully',
-                'data' => new PaymentResource($payment->load('order'))
+                'data' => [
+                    'razorpay_order_id' => $rzpOrder['id'],
+                    'amount' => $rzpOrder['amount'],
+                    'currency' => $rzpOrder['currency'],
+                    'payment' => new PaymentResource($payment->load('order'))
+                ]
             ]);
         });
     }
 
     /**
-     * Payment Success
+     * Payment Success (Signature Verify)
      */
-    public function success(PaymentStatusRequest $request): JsonResponse
+    public function success(Request $request, RazorpayService $razorpay): JsonResponse
     {
-        return DB::transaction(function () use ($request) {
+        return DB::transaction(function () use ($request, $razorpay) {
 
-            $payment = Payment::with('order')
-                ->findOrFail($request->payment_id);
+            $request->validate([
+                'razorpay_order_id' => 'required',
+                'razorpay_payment_id' => 'required',
+                'razorpay_signature' => 'required',
+            ]);
+
+            $payment = Payment::where('transaction_id', $request->razorpay_order_id)
+                ->with('order')
+                ->firstOrFail();
+
+            // ✅ Signature verify
+            $isValid = $razorpay->verifySignature([
+                'razorpay_order_id' => $request->razorpay_order_id,
+                'razorpay_payment_id' => $request->razorpay_payment_id,
+                'razorpay_signature' => $request->razorpay_signature,
+            ]);
+
+            if (!$isValid) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid payment signature'
+                ], 400);
+            }
 
             // Already success check
             if ($payment->status === 'success') {
@@ -77,14 +109,8 @@ class PaymentController extends Controller
                 ]);
             }
 
-            // Mark payment success
+            // Mark success
             $payment->markAsSuccess($request->all());
-
-            // Ensure order consistency
-            $payment->order->update([
-                'is_paid' => true,
-                'status' => 'paid'
-            ]);
 
             return response()->json([
                 'status' => true,
@@ -115,12 +141,6 @@ class PaymentController extends Controller
 
             // Mark failed
             $payment->markAsFailed($request->all());
-
-            // Sync order status
-            $payment->order->update([
-                'is_paid' => false,
-                'status' => 'failed'
-            ]);
 
             return response()->json([
                 'status' => false,
