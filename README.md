@@ -258,12 +258,12 @@ php artisan serve
 ## 🔑 Demo Credentials
 
 ### 👤 User
-- **Email:** user@gmail.com  
-- **Password:** user@123  
+- **Email:** gjha2733@gmail.com 
+- **Password:** Python123@ 
 
 ### 🧑‍💼 Admin
 - **Email:** admin@gmail.com  
-- **Password:** admin@123  
+- **Password:** Python123@  
 
 > ℹ️ Note: You can change roles directly from database (`users.role = admin/user`)
 
