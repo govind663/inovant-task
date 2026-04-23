@@ -13,12 +13,10 @@ class ProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'product' => [
-                'id' => (int) $this->id,
-                'name' => (string) $this->name,
-                'price' => (float) $this->price,
-                'created_at' => $this->created_at?->toDateTimeString(),
-            ],
+            'id' => (int) $this->id,
+            'name' => (string) $this->name,
+            'price' => (float) $this->price,
+            'created_at' => $this->created_at?->toDateTimeString(),
 
             'images' => $this->whenLoaded('images', function () {
                 return $this->images->map(function ($image) {

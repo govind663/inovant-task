@@ -111,7 +111,7 @@ Route::middleware('auth:sanctum')->group(function () {
     */
     Route::prefix('admin')
         ->name('admin.')
-        ->middleware(['auth:sanctum', 'admin']) // ✅ EXTRA STRICT
+        ->middleware(['auth:sanctum', 'admin'])
         ->group(function () {
 
             Route::get('carts', [AdminCartController::class, 'index'])->name('carts.index');

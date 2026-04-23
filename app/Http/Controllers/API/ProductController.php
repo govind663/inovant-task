@@ -29,7 +29,7 @@ class ProductController extends Controller
         try {
             $products = $this->service->list();
 
-            // ✅ Fix N+1 issue
+            // Fix N+1 issue
             $products->getCollection()->load('images');
 
             return response()->json([
@@ -73,7 +73,7 @@ class ProductController extends Controller
 
         } catch (Exception $e) {
             Log::error('Product Store Failed', [
-                'data' => $request->only(['name', 'price']), // ✅ safe logging
+                'data' => $request->only(['name', 'price']),
                 'error' => $e->getMessage()
             ]);
 
@@ -130,7 +130,7 @@ class ProductController extends Controller
         } catch (Exception $e) {
             Log::error('Product Update Failed', [
                 'product_id' => $product->id,
-                'data' => $request->only(['name', 'price']), // ✅ safe logging
+                'data' => $request->only(['name', 'price']),
                 'error' => $e->getMessage()
             ]);
 
@@ -148,16 +148,26 @@ class ProductController extends Controller
     public function destroy(Product $product): JsonResponse
     {
         try {
+
+            // Extra safety (optional but pro level)
+            if (!$product) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Product not found'
+                ], 404);
+            }
+
             $this->service->delete($product);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Product deleted successfully'
-            ], 200);
+            ]);
 
         } catch (Exception $e) {
+
             Log::error('Product Delete Failed', [
-                'product_id' => $product->id,
+                'product_id' => $product->id ?? null,
                 'error' => $e->getMessage()
             ]);
 
