@@ -269,6 +269,15 @@ php artisan serve
 
 ---
 
+## 🧪 Postman Collection
+
+You can test all APIs using Postman collection.
+
+👉 Import Collection:
+https://.postman.co/workspace/My-Workspace~fe359689-391d-41c7-83f9-909af2daed0a/collection/27510642-be4bfb08-58af-4fdc-b87c-a9f74c7fd475?action=share&creator=27510642&active-environment=27510642-4b600ed1-88cc-404c-8585-1ffa670940f1
+
+---
+
 ## 🌍 Postman Environment Variables
 
 | Variable      | Description |
