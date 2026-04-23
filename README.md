@@ -274,7 +274,7 @@ php artisan serve
 You can test all APIs using Postman collection.
 
 👉 Import Collection:
-<https://web.postman.co/workspace/fe359689-391d-41c7-83f9-909af2daed0a/collection/27510642-be4bfb08-58af-4fdc-b87c-a9f74c7fd475?sideView=agentMode>
+<https://.postman.co/workspace/My-Workspace~fe359689-391d-41c7-83f9-909af2daed0a/collection/27510642-be4bfb08-58af-4fdc-b87c-a9f74c7fd475?action=share&creator=27510642>
 
 ---
 
