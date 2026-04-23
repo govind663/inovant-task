@@ -23,18 +23,22 @@ class PaymentController extends Controller
     }
 
     /**
+     * =========================
      * Start Payment
+     * =========================
      */
     public function pay(PayRequest $request): JsonResponse
     {
         try {
-
             $result = $this->service->initiate($request->order_id);
 
             return response()->json([
                 'status' => true,
                 'message' => $result['message'],
-                'data' => $result['data']
+                'data' => [
+                    'order_id' => $request->order_id,
+                    ...$result['data']
+                ]
             ]);
 
         } catch (Exception $e) {
@@ -56,18 +60,27 @@ class PaymentController extends Controller
     }
 
     /**
+     * =========================
      * Payment Success
+     * =========================
      */
     public function success(Request $request): JsonResponse
     {
         try {
 
-            $result = $this->service->verify($request->all());
+            // ✅ Strong validation
+            $validated = $request->validate([
+                'razorpay_order_id' => 'required|string',
+                'razorpay_payment_id' => 'required|string',
+                'razorpay_signature' => 'required|string',
+            ]);
+
+            $payment = $this->service->verify($validated);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Payment successful',
-                'data' => new PaymentResource($result)
+                'data' => new PaymentResource($payment)
             ]);
 
         } catch (Exception $e) {
@@ -89,7 +102,9 @@ class PaymentController extends Controller
     }
 
     /**
+     * =========================
      * Payment Failed
+     * =========================
      */
     public function failed(PaymentStatusRequest $request): JsonResponse
     {
@@ -97,7 +112,10 @@ class PaymentController extends Controller
 
             $payment = $this->service->markFailed(
                 $request->payment_id,
-                $request->all()
+                [
+                    'reason' => $request->input('reason'),
+                    'message' => $request->input('message'),
+                ]
             );
 
             return response()->json([

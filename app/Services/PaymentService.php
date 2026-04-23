@@ -19,7 +19,9 @@ class PaymentService
     }
 
     /**
+     * =========================
      * Initiate Payment
+     * =========================
      */
     public function initiate(int $orderId): array
     {
@@ -48,7 +50,9 @@ class PaymentService
                     throw new Exception('Only pending orders can be paid', 400);
                 }
 
-                // Prevent duplicate payment
+                /**
+                 * ✅ Prevent duplicate payment
+                 */
                 $existing = Payment::where('order_id', $order->id)
                     ->where('status', 'pending')
                     ->first();
@@ -57,23 +61,27 @@ class PaymentService
                     return [
                         'message' => 'Payment already initiated',
                         'data' => [
-                            'razorpay_order_id' => $existing->transaction_id,
+                            'razorpay_order_id' => $existing->razorpay_order_id,
                             'amount' => $existing->amount,
                             'payment_id' => $existing->id
                         ]
                     ];
                 }
 
-                // Create Razorpay Order
+                /**
+                 * ✅ Create Razorpay Order
+                 */
                 $rzpOrder = $this->razorpay->createOrder($order->total_amount);
 
-                // Save Payment
+                /**
+                 * ✅ Save Payment
+                 */
                 $payment = Payment::create([
                     'order_id' => $order->id,
                     'amount' => $order->total_amount,
                     'status' => 'pending',
                     'gateway' => 'razorpay',
-                    'transaction_id' => $rzpOrder['id'] // order_id (important)
+                    'razorpay_order_id' => $rzpOrder['id'], // 🔥 important
                 ]);
 
                 Log::info('Payment Initiated', [
@@ -110,13 +118,17 @@ class PaymentService
     }
 
     /**
+     * =========================
      * Verify Payment
+     * =========================
      */
     public function verify(array $data): Payment
     {
         return DB::transaction(function () use ($data) {
 
-            // Validate request
+            /**
+             * ✅ Validate input
+             */
             if (
                 empty($data['razorpay_order_id']) ||
                 empty($data['razorpay_payment_id']) ||
@@ -125,8 +137,10 @@ class PaymentService
                 throw new Exception('Invalid payment data', 400);
             }
 
-            // Find payment using ORDER ID (important)
-            $payment = Payment::where('transaction_id', $data['razorpay_order_id'])
+            /**
+             * ✅ Find payment by razorpay_order_id
+             */
+            $payment = Payment::where('razorpay_order_id', $data['razorpay_order_id'])
                 ->with('order')
                 ->first();
 
@@ -134,13 +148,15 @@ class PaymentService
                 throw new Exception('Payment not found', 404);
             }
 
-            // Auth check
+            /**
+             * ✅ Auth check
+             */
             if ($payment->order->user_id !== Auth::id()) {
                 throw new Exception('Unauthorized access', 403);
             }
 
             /**
-             * 🔥 TEST MODE (Postman)
+             * 🔥 TEST MODE
              */
             $isValid = true;
 
@@ -153,7 +169,9 @@ class PaymentService
                 throw new Exception('Invalid payment signature', 400);
             }
 
-            // Already success
+            /**
+             * ✅ Already success
+             */
             if ($payment->status === 'success') {
                 return $payment->fresh('order');
             }
@@ -163,16 +181,17 @@ class PaymentService
              */
             $payment->update([
                 'status' => 'success',
-                'response' => json_encode($data),
-                'transaction_id' => $data['razorpay_payment_id'] // now store payment_id
+                'response' => $data,
+                'razorpay_payment_id' => $data['razorpay_payment_id'],
+                'razorpay_signature' => $data['razorpay_signature'],
             ]);
 
             /**
-             * ✅ FIX: Use valid ENUM value
+             * ✅ Update order
              */
             $payment->order->update([
                 'is_paid' => true,
-                'status' => 'paid' // 🔥 FIXED (NOT confirmed)
+                'status' => 'paid'
             ]);
 
             Log::info('Payment Success', [
@@ -184,7 +203,9 @@ class PaymentService
     }
 
     /**
+     * =========================
      * Mark Payment Failed
+     * =========================
      */
     public function markFailed(int $paymentId, array $data): Payment
     {
@@ -206,13 +227,16 @@ class PaymentService
                 return $payment->fresh('order');
             }
 
+            /**
+             * ✅ Update payment
+             */
             $payment->update([
                 'status' => 'failed',
-                'response' => json_encode($data)
+                'response' => $data
             ]);
 
             /**
-             * ✅ FIX: valid ENUM
+             * ✅ Update order
              */
             $payment->order->update([
                 'status' => 'failed',

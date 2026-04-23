@@ -15,7 +15,15 @@ class Payment extends Model
      */
     protected $fillable = [
         'order_id',
+
+        // Razorpay fields
+        'razorpay_order_id',
+        'razorpay_payment_id',
+        'razorpay_signature',
+
+        // fallback / legacy
         'transaction_id',
+
         'gateway',
         'amount',
         'status',
@@ -31,20 +39,22 @@ class Payment extends Model
     ];
 
     /**
+     * =========================
      * Relationships
+     * =========================
      */
 
-    // Payment belongs to an order
     public function order()
     {
         return $this->belongsTo(Order::class);
     }
 
     /**
-     * Helper Methods (Business Logic)
+     * =========================
+     * Business Logic
+     * =========================
      */
 
-    // Mark payment as success
     public function markAsSuccess(array $response = [])
     {
         $this->update([
@@ -52,13 +62,14 @@ class Payment extends Model
             'response' => $response,
         ]);
 
-        // Also update order
         if ($this->order) {
-            $this->order->markAsPaid();
+            $this->order->update([
+                'is_paid' => true,
+                'status' => 'paid'
+            ]);
         }
     }
 
-    // Mark payment as failed
     public function markAsFailed(array $response = [])
     {
         $this->update([
@@ -66,27 +77,31 @@ class Payment extends Model
             'response' => $response,
         ]);
 
-        // Also update order
         if ($this->order) {
-            $this->order->markAsFailed();
+            $this->order->update([
+                'is_paid' => false,
+                'status' => 'failed'
+            ]);
         }
     }
 
     /**
-     * Helper Check Methods
+     * =========================
+     * Helpers
+     * =========================
      */
 
-    public function isSuccess()
+    public function isSuccess(): bool
     {
         return $this->status === 'success';
     }
 
-    public function isFailed()
+    public function isFailed(): bool
     {
         return $this->status === 'failed';
     }
 
-    public function isPending()
+    public function isPending(): bool
     {
         return $this->status === 'pending';
     }
