@@ -193,12 +193,12 @@ php artisan serve
 
 ## 🛒 Cart
 
-| Method | Endpoint            | Description |
-|--------|--------------------|-------------|
-| GET    | /api/cart          | Get user cart |
-| POST   | /api/cart/add      | Add product to cart |
-| POST   | /api/cart/update   | Update cart item quantity |
-| DELETE | /api/cart/remove   | Remove item from cart |
+| Method | Endpoint                     | Description |
+|--------|------------------------------|-------------|
+| GET    | /api/cart                    | Get user cart |
+| POST   | /api/cart/items              | Add product to cart |
+| PATCH  | /api/cart/items/{item_id}    | Update cart item |
+| DELETE | /api/cart/items/{item_id}    | Remove item |
 
 ---
 
@@ -269,17 +269,15 @@ php artisan serve
 
 ---
 
-## 🧪 Postman Collection
+## 🌍 Postman Environment Variables
 
-- All APIs tested via Postman
-- Collection includes:
-  - Auth flow
-  - Cart flow
-  - Checkout flow
-  - Payment simulation
+| Variable      | Description |
+|--------------|------------|
+| base_url     | API base URL |
+| user_token   | User authentication token |
+| admin_token  | Admin authentication token |
 
-👉 Import Postman Collection:
-<https://.postman.co/workspace/My-Workspace~fe359689-391d-41c7-83f9-909af2daed0a/collection/27510642-be4bfb08-58af-4fdc-b87c-a9f74c7fd475?action=share&creator=27510642&active-environment=27510642-4b600ed1-88cc-404c-8585-1ffa670940f1>
+> ⚠️ Note: Tokens are generated after login and must be set manually in Postman environment.
 
 ---
 
