@@ -20,16 +20,20 @@ class CartResource extends JsonResource
 
             'items' => $this->whenLoaded('items', function () {
                 return $this->items->map(function ($item) {
+
+                    $unitPrice = (float) $item->price;
+                    $quantity = (int) $item->quantity;
+
                     return [
                         'id' => (int) $item->id,
-                        'quantity' => (int) $item->quantity,
-                        'price' => (float) $item->price,
-                        'total_price' => (float) $item->total_price,
+                        'quantity' => $quantity,
+                        'unit_price' => $unitPrice,
+                        'total' => $unitPrice * $quantity,
 
                         'product' => [
-                            'id' => $item->product?->id,
-                            'name' => $item->product?->name,
-                            'price' => $item->product?->price,
+                            'id' => (int) ($item->product?->id ?? 0),
+                            'name' => (string) ($item->product?->name ?? ''),
+                            'price' => (float) ($item->product?->price ?? 0),
                         ]
                     ];
                 });

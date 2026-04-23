@@ -29,12 +29,26 @@ class CartController extends Controller
         try {
             $cart = $this->service->getUserCart();
 
+            // ✅ Handle Empty Cart (FIXED)
+            if (!$cart) {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Cart is empty',
+                    'data' => [
+                        'cart' => null,
+                        'items' => []
+                    ]
+                ]);
+            }
+
             return response()->json([
                 'status' => true,
-                'data' => $cart ? new CartResource($cart) : null
+                'message' => 'Cart fetched successfully',
+                'data' => new CartResource($cart)
             ]);
 
         } catch (Exception $e) {
+
             Log::error('Cart Fetch Failed', [
                 'error' => $e->getMessage()
             ]);
@@ -62,6 +76,7 @@ class CartController extends Controller
             ]);
 
         } catch (Exception $e) {
+
             Log::error('Add to Cart Failed', [
                 'error' => $e->getMessage()
             ]);
@@ -84,11 +99,12 @@ class CartController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Cart updated',
+                'message' => 'Cart updated successfully',
                 'data' => new CartResource($cart)
             ]);
 
         } catch (Exception $e) {
+
             Log::error('Cart Update Failed', [
                 'error' => $e->getMessage()
             ]);
@@ -111,11 +127,12 @@ class CartController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Item removed',
+                'message' => 'Item removed from cart',
                 'data' => new CartResource($cart)
             ]);
 
         } catch (Exception $e) {
+
             Log::error('Cart Remove Failed', [
                 'error' => $e->getMessage()
             ]);
