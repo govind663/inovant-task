@@ -33,34 +33,22 @@ class OrderService
     /**
      * Cancel order
      */
-    public function cancel($id): array
+    public function cancel($id): ?Order
     {
         $order = Order::where('id', $id)
             ->where('user_id', Auth::id())
             ->first();
 
         if (!$order) {
-            return [
-                'status' => false,
-                'message' => 'Order not found',
-                'code' => 404
-            ];
+            return null;
         }
 
         if ($order->status !== 'pending') {
-            return [
-                'status' => false,
-                'message' => 'Only pending orders can be cancelled',
-                'code' => 400
-            ];
+            throw new \Exception('Only pending orders can be cancelled');
         }
 
         if ($order->is_paid) {
-            return [
-                'status' => false,
-                'message' => 'Paid order cannot be cancelled',
-                'code' => 400
-            ];
+            throw new \Exception('Paid order cannot be cancelled');
         }
 
         $order->update([
@@ -72,10 +60,6 @@ class OrderService
             'order_id' => $order->id
         ]);
 
-        return [
-            'status' => true,
-            'message' => 'Order cancelled successfully',
-            'code' => 200
-        ];
+        return $order;
     }
 }

@@ -7,11 +7,12 @@ use App\Http\Resources\OrderResource;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Exception;
 
 class OrderController extends Controller
 {
-    protected $service;
+    protected OrderService $service;
 
     public function __construct(OrderService $service)
     {
@@ -36,11 +37,12 @@ class OrderController extends Controller
                     'per_page' => $orders->perPage(),
                     'total' => $orders->total(),
                 ]
-            ]);
+            ], 200);
 
         } catch (Exception $e) {
 
             Log::error('Order List Failed', [
+                'user_id' => Auth::id(),
                 'error' => $e->getMessage()
             ]);
 
@@ -71,12 +73,13 @@ class OrderController extends Controller
                 'status' => true,
                 'message' => 'Order fetched successfully',
                 'data' => new OrderResource($order)
-            ]);
+            ], 200);
 
         } catch (Exception $e) {
 
             Log::error('Order Fetch Failed', [
                 'order_id' => $id,
+                'user_id' => Auth::id(),
                 'error' => $e->getMessage()
             ]);
 
@@ -94,25 +97,36 @@ class OrderController extends Controller
     public function cancel($id): JsonResponse
     {
         try {
-            $response = $this->service->cancel($id);
+            $order = $this->service->cancel($id);
+
+            if (!$order) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Order not found'
+                ], 404);
+            }
 
             return response()->json([
-                'status' => $response['status'],
-                'message' => $response['message']
-            ], $response['code']);
+                'status' => true,
+                'message' => 'Order cancelled successfully',
+                'data' => [
+                    'order' => new OrderResource($order),
+                    'cancelled_at' => now()->toDateTimeString()
+                ]
+            ], 200);
 
         } catch (Exception $e) {
 
             Log::error('Order Cancel Failed', [
                 'order_id' => $id,
+                'user_id' => Auth::id(),
                 'error' => $e->getMessage()
             ]);
 
             return response()->json([
                 'status' => false,
-                'message' => 'Order cancellation failed',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
+                'message' => $e->getMessage()
+            ], 400);
         }
     }
 }
