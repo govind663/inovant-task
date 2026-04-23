@@ -23,7 +23,7 @@ Route::prefix('auth')->name('auth.')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Protected Routes
+| Protected Routes (Auth Required)
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->group(function () {
@@ -106,16 +106,19 @@ Route::middleware('auth:sanctum')->group(function () {
 
     /*
     |-------------------------
-    | Admin / CMS (🔒 SECURED)
+    | Admin / CMS (SECURED)
     |-------------------------
     */
-    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+    Route::prefix('admin')
+        ->name('admin.')
+        ->middleware(['auth:sanctum', 'admin']) // ✅ EXTRA STRICT
+        ->group(function () {
 
-        Route::get('carts', [AdminCartController::class, 'index'])->name('carts.index');
+            Route::get('carts', [AdminCartController::class, 'index'])->name('carts.index');
 
-        Route::get('carts/{id}', [AdminCartController::class, 'show'])->name('carts.show');
+            Route::get('carts/{id}', [AdminCartController::class, 'show'])->name('carts.show');
 
-        Route::get('users/{user}/cart', [AdminCartController::class, 'showUserCart'])->name('users.cart');
-    });
+            Route::get('users/{user}/cart', [AdminCartController::class, 'showUserCart'])->name('users.cart');
+        });
 
 });
