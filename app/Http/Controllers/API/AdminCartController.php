@@ -18,7 +18,13 @@ class AdminCartController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $carts = Cart::with(['items.product', 'user'])
+            $carts = Cart::with([
+                    // ✅ optimized eager loading
+                    'user:id,name,email',
+                    'items' => function ($q) {
+                        $q->with('product:id,name,price');
+                    }
+                ])
                 ->latest()
                 ->paginate(10);
 
@@ -35,6 +41,7 @@ class AdminCartController extends Controller
             ]);
 
         } catch (Exception $e) {
+
             Log::error('AdminCart Index Failed', [
                 'error' => $e->getMessage()
             ]);
@@ -53,7 +60,13 @@ class AdminCartController extends Controller
     public function show($id): JsonResponse
     {
         try {
-            $cart = Cart::with(['items.product', 'user'])->find($id);
+            $cart = Cart::with([
+                    'user:id,name,email',
+                    'items' => function ($q) {
+                        $q->with('product:id,name,price');
+                    }
+                ])
+                ->find($id);
 
             if (!$cart) {
                 return response()->json([
@@ -69,6 +82,7 @@ class AdminCartController extends Controller
             ]);
 
         } catch (Exception $e) {
+
             Log::error('AdminCart Show Failed', [
                 'cart_id' => $id,
                 'error' => $e->getMessage()
@@ -88,9 +102,13 @@ class AdminCartController extends Controller
     public function showUserCart(User $user): JsonResponse
     {
         try {
-            $cart = Cart::with(['items.product'])
+            $cart = Cart::with([
+                    'items' => function ($q) {
+                        $q->with('product:id,name,price');
+                    }
+                ])
                 ->where('user_id', $user->id)
-                ->where('status', 'active')
+                ->latest()
                 ->first();
 
             return response()->json([
@@ -100,6 +118,7 @@ class AdminCartController extends Controller
             ]);
 
         } catch (Exception $e) {
+
             Log::error('AdminCart UserCart Failed', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage()

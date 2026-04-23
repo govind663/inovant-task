@@ -17,25 +17,36 @@ use Exception;
 class AuthController extends Controller
 {
     /**
-     * Register
+     * Register (User + Admin दोनों support)
      */
     public function register(RegisterRequest $request): JsonResponse
     {
         try {
             return DB::transaction(function () use ($request) {
 
+                // 🔥 Default role = user
+                $role = $request->input('role', User::ROLE_USER);
+
+                // 🔥 Only allow admin if explicitly passed (optional security)
+                if ($role === User::ROLE_ADMIN) {
+                    throw new Exception('Admin registration not allowed', 403);
+                }
+
                 $user = User::create([
                     'name' => $request->name,
                     'email' => strtolower($request->email),
                     'password' => Hash::make($request->password),
-                    'role' => User::ROLE_USER,
+
+                    // ✅ BOTH handled
+                    'role' => $role,
+                    'is_admin' => $role === User::ROLE_ADMIN
                 ]);
 
                 $token = $user->createToken('auth_token')->plainTextToken;
 
                 return response()->json([
                     'status' => true,
-                    'message' => 'User registered successfully',
+                    'message' => ucfirst($role) . ' registered successfully',
                     'data' => [
                         'token' => $token,
                         'user' => new AuthResource($user),
@@ -69,10 +80,6 @@ class AuthController extends Controller
             ];
 
             if (!Auth::attempt($credentials)) {
-                Log::warning('Login Failed - Invalid Credentials', [
-                    'email' => $request->email
-                ]);
-
                 return response()->json([
                     'status' => false,
                     'message' => 'Invalid credentials'
@@ -81,7 +88,7 @@ class AuthController extends Controller
 
             $user = Auth::user();
 
-            // Single device login
+            // 🔥 Single device login
             $user->tokens()->delete();
 
             $token = $user->createToken('auth_token')->plainTextToken;
@@ -92,6 +99,7 @@ class AuthController extends Controller
                 'data' => [
                     'token' => $token,
                     'user' => new AuthResource($user),
+                    'is_admin' => $user->isAdmin(), // 🔥 extra clarity
                 ]
             ]);
 
@@ -162,7 +170,8 @@ class AuthController extends Controller
 
             return response()->json([
                 'status' => true,
-                'data' => new AuthResource($user)
+                'data' => new AuthResource($user),
+                'is_admin' => $user->isAdmin()
             ]);
 
         } catch (Exception $e) {

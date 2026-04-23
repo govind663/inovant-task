@@ -19,6 +19,7 @@ class CartResource extends JsonResource
             ],
 
             'items' => $this->whenLoaded('items', function () {
+
                 return $this->items->map(function ($item) {
 
                     $unitPrice = (float) $item->price;
@@ -28,16 +29,17 @@ class CartResource extends JsonResource
                         'id' => (int) $item->id,
                         'quantity' => $quantity,
                         'unit_price' => $unitPrice,
-                        'total' => $unitPrice * $quantity,
+                        'total' => (float) ($unitPrice * $quantity),
 
-                        'product' => [
-                            'id' => (int) ($item->product?->id ?? 0),
-                            'name' => (string) ($item->product?->name ?? ''),
-                            'price' => (float) ($item->product?->price ?? 0),
-                        ]
+                        // SAFE product mapping
+                        'product' => $item->product ? [
+                            'id' => (int) $item->product->id,
+                            'name' => (string) $item->product->name,
+                            'price' => (float) $item->product->price,
+                        ] : null
                     ];
-                });
-            }),
+                })->values();
+            }, []),
         ];
     }
 }

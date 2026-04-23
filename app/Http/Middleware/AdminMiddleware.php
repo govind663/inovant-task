@@ -4,26 +4,29 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class AdminMiddleware
 {
     /**
-     * Handle an incoming request.
+     * Handle an incoming request
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // ❌ Not logged in
-        if (!Auth::check()) {
+        $user = $request->user(); // Sanctum user
+
+        // Not authenticated
+        if (!$user) {
             return response()->json([
                 'status' => false,
                 'message' => 'Unauthenticated'
             ], 401);
         }
 
-        // ❌ Not admin
-        if (!Auth::user()->is_admin) {
+        /**
+         * Clean Admin Check (Single Source of Truth)
+         */
+        if (!$user->isAdmin()) {
             return response()->json([
                 'status' => false,
                 'message' => 'Unauthorized (Admin only)'

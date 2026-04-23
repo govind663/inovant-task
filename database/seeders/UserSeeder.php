@@ -20,6 +20,7 @@ class UserSeeder extends Seeder
             'email_verified_at' => Carbon::now(),
             'password'          => Hash::make('user@123'),
             'role'              => 'user',
+            'is_admin'         => false,
             // Audit
             'created_by'        => 1,
         ]);

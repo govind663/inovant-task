@@ -7,6 +7,7 @@ use App\Models\CartItem;
 use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Exception;
 
 class CartService
 {
@@ -28,7 +29,7 @@ class CartService
     {
         return DB::transaction(function () use ($request) {
 
-            $quantity = $request->quantity ?? 1;
+            $quantity = max(1, (int) ($request->quantity ?? 1));
 
             $product = Product::findOrFail($request->product_id);
 
@@ -36,6 +37,11 @@ class CartService
                 'user_id' => Auth::id(),
                 'status' => 'active'
             ]);
+
+            // 🔥 Prevent modification after checkout
+            if ($cart->status !== 'active') {
+                throw new Exception('Cart is locked');
+            }
 
             $item = CartItem::where('cart_id', $cart->id)
                 ->where('product_id', $product->id)
@@ -52,9 +58,10 @@ class CartService
                 ]);
             }
 
+            // ✅ ALWAYS recalc
             $cart->recalculate();
 
-            return $cart->load('items.product');
+            return $cart->fresh(['items.product']);
         });
     }
 
@@ -71,14 +78,24 @@ class CartService
                 })
                 ->firstOrFail();
 
+            // 🔥 Prevent invalid quantity
+            if ($request->quantity <= 0) {
+                throw new Exception('Quantity must be greater than 0');
+            }
+
             $item->update([
                 'quantity' => $request->quantity
             ]);
 
             $cart = $item->cart;
+
+            if ($cart->status !== 'active') {
+                throw new Exception('Cart is locked');
+            }
+
             $cart->recalculate();
 
-            return $cart->load('items.product');
+            return $cart->fresh(['items.product']);
         });
     }
 
@@ -97,11 +114,15 @@ class CartService
 
             $cart = $item->cart;
 
+            if ($cart->status !== 'active') {
+                throw new Exception('Cart is locked');
+            }
+
             $item->delete();
 
             $cart->recalculate();
 
-            return $cart->load('items.product');
+            return $cart->fresh(['items.product']);
         });
     }
 }
