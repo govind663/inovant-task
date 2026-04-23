@@ -18,19 +18,23 @@ class PaymentStatusRequest extends FormRequest
             return false;
         }
 
-        $paymentId = $this->input('payment_id');
+        $payment = Payment::where('id', $this->input('payment_id'))
+            ->with('order')
+            ->first();
 
-        if (!$paymentId) {
+        if (!$payment) {
             return false;
         }
 
-        // Secure + Only pending payments allowed
-        return Payment::where('id', $paymentId)
-            ->where('status', 'pending')
-            ->whereHas('order', function ($query) {
-                $query->where('user_id', Auth::id());
-            })
-            ->exists();
+        if ($payment->order->user_id !== Auth::id()) {
+            return false;
+        }
+
+        if ($payment->status !== 'pending') {
+            abort(403, 'Only pending payments can be updated.');
+        }
+
+        return true;
     }
 
     /**

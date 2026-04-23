@@ -29,10 +29,19 @@ class RazorpayService
     public function createOrder(float $amount): array
     {
         try {
+
+            if ($amount <= 0) {
+                throw new RuntimeException('Invalid payment amount.');
+            }
+
+            // Convert to paise (₹ → paisa)
+            $amountInPaise = (int) round($amount * 100);
+
             $order = $this->api->order->create([
-                'receipt' => 'order_' . now()->timestamp,
-                'amount' => (int) round($amount * 100), // safer conversion
+                'receipt' => 'order_' . uniqid(),
+                'amount' => $amountInPaise,
                 'currency' => config('services.razorpay.currency', 'INR'),
+                'payment_capture' => 1, // auto capture
             ]);
 
             return [
@@ -45,7 +54,9 @@ class RazorpayService
 
             Log::error('Razorpay Order Creation Failed', [
                 'amount' => $amount,
-                'error' => $e->getMessage()
+                'converted_amount' => isset($amountInPaise) ? $amountInPaise : null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             throw new RuntimeException('Unable to create payment order.');
@@ -58,13 +69,24 @@ class RazorpayService
     public function verifySignature(array $attributes): bool
     {
         try {
+
+            if (
+                empty($attributes['razorpay_order_id']) ||
+                empty($attributes['razorpay_payment_id']) ||
+                empty($attributes['razorpay_signature'])
+            ) {
+                throw new RuntimeException('Invalid payment verification data.');
+            }
+
             $this->api->utility->verifyPaymentSignature($attributes);
+
             return true;
 
         } catch (\Throwable $e) {
 
             Log::error('Razorpay Signature Verification Failed', [
                 'order_id' => Arr::get($attributes, 'razorpay_order_id'),
+                'payment_id' => Arr::get($attributes, 'razorpay_payment_id'),
                 'error' => $e->getMessage(),
             ]);
 
